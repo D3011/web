@@ -5062,6 +5062,7 @@ window.grantRetest=grantRetest;
 window.grantRetestBtn=grantRetestBtn;
 if(typeof openLesson!=='undefined') window.openLesson=openLesson;
 if(typeof openLessonByTopic!=='undefined') window.openLessonByTopic=openLessonByTopic;
+window.retryLessonLoad=retryLessonLoad;
 if(typeof closeLessonOverlay!=='undefined') window.closeLessonOverlay=closeLessonOverlay;
 if(typeof closeLessonAndStartQuiz!=='undefined') window.closeLessonAndStartQuiz=closeLessonAndStartQuiz;
 if(typeof closeQuizOverlay!=='undefined') window.closeQuizOverlay=closeQuizOverlay;
@@ -5871,6 +5872,17 @@ async function openLessonByTopic(si, ui, ti, li){
       </div>`;
   } else {
     const material = await generateLessonContent(_obtName, unit.name, subj.name, unit.topics||[]);
+    if(!material){
+      document.getElementById('lessonBody').innerHTML = `
+        <div style="text-align:center;padding:2.5rem 1rem;">
+          <div style="font-size:2.5rem;margin-bottom:0.8rem;">📡</div>
+          <div style="font-size:0.95rem;font-weight:700;color:var(--navy);margin-bottom:0.4rem;">Could not connect to AI</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem;">The lesson content could not be loaded.</div>
+          <button onclick="closeLessonOverlay()" style="background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.7rem 1.6rem;font-size:0.85rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">← Back</button>
+          <button onclick="retryLessonLoad()" style="background:var(--sky);color:#fff;border:none;border-radius:8px;padding:0.7rem 1.6rem;font-size:0.85rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">🔄 Retry</button>
+        </div>`;
+      return;
+    }
     currentLesson.lessonContent = material;
     document.getElementById('lessonBody').innerHTML = `
       <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.8rem 1.2rem;font-size:1rem;line-height:1.85;">
@@ -5934,7 +5946,18 @@ async function openLesson(si, ui, li){
     // No faculty content — generate with AI, show spinner while loading
     document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div><div>Loading lesson\u2026</div></div>';
     const material = await generateLessonContent(lessonName, unit.name||'', subj.name, unit.topics||[]);
-    currentLesson.lessonContent = material; // store generated content for quiz use
+    if(!material){
+      document.getElementById('lessonBody').innerHTML = `
+        <div style="text-align:center;padding:2.5rem 1rem;">
+          <div style="font-size:2.5rem;margin-bottom:0.8rem;">📡</div>
+          <div style="font-size:0.95rem;font-weight:700;color:var(--navy);margin-bottom:0.4rem;">Could not connect to AI</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem;">The lesson content could not be loaded. This may be due to a network issue.</div>
+          <button onclick="closeLessonOverlay()" style="background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.7rem 1.6rem;font-size:0.85rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">← Back</button>
+          <button onclick="retryLessonLoad()" style="background:var(--sky);color:#fff;border:none;border-radius:8px;padding:0.7rem 1.6rem;font-size:0.85rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">🔄 Retry</button>
+        </div>`;
+      return;
+    }
+    currentLesson.lessonContent = material;
     document.getElementById('lessonBody').innerHTML = `
       <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.8rem 1.2rem;font-size:1rem;line-height:1.85;">
         ${material}
@@ -5946,14 +5969,28 @@ async function openLesson(si, ui, li){
   }
 }
 
+
+function retryLessonLoad(){
+  if(!currentLesson) return;
+  const cl = currentLesson;
+  // Re-open the same lesson
+  if(cl._isTopic) openLessonByTopic(cl.si, cl.ui, cl._ti, cl._localLi);
+  else openLesson(cl.si, cl.ui, cl.li);
+}
+
 function closeLessonOverlay(){
   document.getElementById('lessonOverlay').classList.remove('active');
   document.body.style.overflow = '';
 }
 
 function closeLessonAndStartQuiz(){
-  closeLessonOverlay();
-  if(currentLesson) startLessonQuiz(currentLesson.si, currentLesson.ui, currentLesson.li);
+  // Hide lesson overlay AFTER capturing currentLesson
+  const cl = currentLesson;
+  if(!cl) return;
+  // Show quiz overlay first (keeps screen active), then hide lesson
+  startLessonQuiz(cl.si, cl.ui, cl.li);
+  // Only close lesson after quiz is open (non-blocking — startLessonQuiz opens quizOverlay synchronously)
+  document.getElementById('lessonOverlay').classList.remove('active');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -5978,17 +6015,23 @@ Keep it concise (about 300-400 words). Do not use markdown, only HTML tags liste
 
     const res = await fetch(CLAUDE_API, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
         messages:[{role:'user',content:prompt}]
       })
     });
+    if(!res.ok){ console.error('Lesson AI error',res.status); return null; }
     const data = await res.json();
-    return data.content?.[0]?.text || '<p>Study material will be available soon. Please refer to your textbook.</p>';
+    return data.content?.[0]?.text || null;
   } catch(e){
-    return '<p>Could not load study material. Please check your connection and try again.</p>';
+    console.error('generateLessonContent error:',e);
+    return null;
   }
 }
 
@@ -6033,7 +6076,11 @@ Rules: MCQ options must start with A./B./C./D., correct is 0-3 index. Return ONL
   try{
     const res = await fetch(CLAUDE_API, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1500,
