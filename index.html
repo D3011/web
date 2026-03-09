@@ -3681,7 +3681,8 @@ async function openPortal(info,user){
     const sl=document.getElementById('sylSoonLabel'); if(sl)sl.textContent=info.yearLabel;
   }
 
-  // Reload syllabus lessons so student sees latest faculty updates
+  // Reset sylData to defaults, then overlay Firebase data fresh
+  sylData = JSON.parse(JSON.stringify(DEFAULT_SYL));
   await loadSyllabusLessons();
   // Load student progress
   await loadProgress(info.email);
@@ -3967,6 +3968,7 @@ async function openFacPortal(info,user){
 
   await loadCoreData();               // flash, notifications, timetable, faculty
   await loadStaffRoles();              // HOD & class incharge roles
+  sylData = JSON.parse(JSON.stringify(DEFAULT_SYL));
   await loadSyllabusLessons();        // always reload lessons on portal entry
 
   renderFacFlash();
@@ -4090,9 +4092,19 @@ async function loadSyllabusLessons(){
             if(Array.isArray(saved[uk])){
               sylData[yr][si].units[ui].lessons = saved[uk];
             } else {
-              if(saved[uk].lessons) sylData[yr][si].units[ui].lessons = Array.isArray(saved[uk].lessons)?saved[uk].lessons:Object.values(saved[uk].lessons);
-              if(saved[uk].topics)  sylData[yr][si].units[ui].topics  = Array.isArray(saved[uk].topics)?saved[uk].topics:Object.values(saved[uk].topics);
-              if(saved[uk].name)    sylData[yr][si].units[ui].name    = saved[uk].name;
+              if(saved[uk].lessons !== undefined) sylData[yr][si].units[ui].lessons = Array.isArray(saved[uk].lessons)?saved[uk].lessons:Object.values(saved[uk].lessons);
+              if(saved[uk].topics  !== undefined) sylData[yr][si].units[ui].topics  = Array.isArray(saved[uk].topics) ?saved[uk].topics :Object.values(saved[uk].topics);
+              if(saved[uk].name)                  sylData[yr][si].units[ui].name    = saved[uk].name;
+              if(saved[uk].topicLessons) {
+                // Firebase stores numeric-keyed objects; convert keys back to numbers
+                const tl = saved[uk].topicLessons;
+                const tlConverted = {};
+                Object.keys(tl).forEach(k => {
+                  const lessons = Array.isArray(tl[k]) ? tl[k] : Object.values(tl[k]);
+                  tlConverted[parseInt(k)] = lessons;
+                });
+                sylData[yr][si].units[ui].topicLessons = tlConverted;
+              }
             }
           }
         });
@@ -4106,7 +4118,12 @@ async function saveSyllabusLessons(yr, si){
   const sk = sKey(subj.name);
   const payload = {};
   subj.units.forEach((u,ui)=>{
-    payload['u'+ui] = { lessons:u.lessons||[], topics:u.topics||[], name:u.name||'' };
+    payload['u'+ui] = {
+      lessons: u.lessons||[],
+      topics:  u.topics||[],
+      name:    u.name||'',
+      topicLessons: u.topicLessons||{}
+    };
   });
   const ok=await fbSet('/syllabusLessons/'+yr+'/'+sk, payload);
   if(!ok) adminToast('❌ Lesson not saved — update Firebase Rules to ".write":true (Security tab)');
@@ -5681,106 +5698,147 @@ function renderStudentSyllabus(info){
     el.innerHTML='<div style="text-align:center;padding:2rem;"><div style="font-size:2rem;">📚</div><div style="font-weight:700;color:var(--navy);margin-top:0.5rem;">Syllabus Will Be Updated Soon</div></div>';
     return;
   }
-  const tabs = subjs.map((s,si)=>`<button class="syl-tab${si===0?' active':''}" onclick="stdSylTab(${si},this)">${s.name}</button>`).join('');
+
+  // Normalise units — year-1 subjects store units as plain strings
+  function normUnit(u, ui){ return typeof u==='string' ? {name:u, topics:[], lessons:[], topicLessons:{}} : u; }
+
+  // Compute per-subject lesson totals for tab badges
+  function subjLessonStats(s){
+    let total=0, done=0;
+    (s.units||[]).forEach((u0,ui)=>{
+      const u = normUnit(u0,ui);
+      const tl = u.topicLessons||{};
+      const topicCount = (u.topics||[]).reduce((a,_,ti)=>a+(tl[ti]||[]).length, 0);
+      const legCount = (u.lessons||[]).length;
+      const count = topicCount + legCount;
+      total += count;
+      for(let li=0;li<count;li++) if(isLessonDone(info.email,s.id,ui,li)) done++;
+    });
+    const pct = total>0 ? Math.round(done/total*100) : 0;
+    return {total, done, pct};
+  }
+
+  const subjStats = subjs.map(s=>subjLessonStats(s));
+
+  const tabs = subjs.map((s,si)=>{
+    const sp = subjStats[si];
+    const col = sp.pct>=100?'#276749':sp.pct>=50?'#c9882a':'#aaa';
+    return `<button class="syl-tab${si===0?' active':''}" onclick="stdSylTab(${si},this)">${s.name}${sp.total>0?` <span style="font-size:0.65rem;font-weight:700;color:${col};margin-left:3px;">${sp.pct}%</span>`:''}`;
+  }).join('');
+
   const panels = subjs.map((s,si)=>{
-    const unitRows = (s.units||[]).map((u,ui)=>{
-      const lessons = u.lessons || [];
-      const total = lessons.length;
-      const done = total > 0 ? completedLessonsInUnit(info.email, s.id, ui, lessonTotal) : 0;
-      const pct = lessonTotal>0 ? Math.round(done/lessonTotal*100) : 0;
-      const unitDone = isUnitTestDone(info.email, s.id, ui);
-      const allLessonsDone = lessonTotal > 0 && done === lessonTotal;
-
-      // Lessons now stored per-topic in topicLessons
-      const topicLessons = u.topicLessons || {};
-      // Flatten all lessons across topics for progress counting
-      const allTopicLessons = (u.topics||[]).flatMap((t,ti)=>
-        (topicLessons[ti]||[]).map((l,li)=>({t,ti,l,li}))
-      );
-      // Also keep legacy unit.lessons
+    const unitRows = (s.units||[]).map((u0,ui)=>{
+      const u = normUnit(u0,ui);
+      const tl = u.topicLessons||{};
       const legacyLessons = u.lessons||[];
-      const lessonCount = allTopicLessons.length + legacyLessons.length;
 
-      // Build per-topic lesson rows
+      // Count ALL lessons in this unit
+      const topicLessonCount = (u.topics||[]).reduce((a,_,ti)=>a+(tl[ti]||[]).length,0);
+      const lessonTotal = topicLessonCount + legacyLessons.length;
+
+      // Count completed
+      let doneCount = 0;
+      for(let li=0;li<lessonTotal;li++) if(isLessonDone(info.email,s.id,ui,li)) doneCount++;
+      const pct = lessonTotal>0 ? Math.round(doneCount/lessonTotal*100) : 0;
+      const unitDone = isUnitTestDone(info.email,s.id,ui);
+      const allLessonsDone = lessonTotal>0 && doneCount===lessonTotal;
+
+      // Build lesson rows per topic
       const topicLessonRows = (u.topics||[]).map((t,ti)=>{
-        const tLessons = topicLessons[ti]||[];
+        const tLessons = tl[ti]||[];
+        if(!tLessons.length) return '';
         const lRows = tLessons.map((l,li)=>{
-          const globalIdx = (u.topics||[]).slice(0,ti).reduce((a,_,i2)=>a+(topicLessons[i2]||[]).length,0)+li;
-          const lDone = isLessonDone(info.email, s.id, ui, globalIdx);
-          const score = getLessonScore(info.email, s.id, ui, globalIdx);
+          const globalIdx = (u.topics||[]).slice(0,ti).reduce((a,_,i2)=>a+(tl[i2]||[]).length,0)+li;
+          const lDone = isLessonDone(info.email,s.id,ui,globalIdx);
+          const score = getLessonScore(info.email,s.id,ui,globalIdx);
+          const lName = typeof l==='object' ? l.title : l;
+          const badge = lDone
+            ? `<span class="lesson-row-badge lbadge-done">✅ ${score!==null?score+'% · ':''}Re-read</span>`
+            : `<span class="lesson-row-badge lbadge-todo">📖 Study</span>`;
           return `<div class="lesson-row" onclick="openLessonByTopic(${si},${ui},${ti},${li})">
-            <div class="lesson-row-num">${li+1}</div>
-            <div class="lesson-row-text">${l}</div>
-            <span class="lesson-row-badge ${lDone?'lbadge-done':'lbadge-todo'}">${lDone?'✅ Done'+(score!==null?' · '+score+'%':''):'Study'}</span>
+            <div class="lesson-row-num">${globalIdx+1}</div>
+            <div class="lesson-row-text">${lName}</div>
+            ${badge}
           </div>`;
         }).join('');
-        if(!tLessons.length) return '';
-        return `<div style="margin-bottom:0.3rem;">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--muted);padding:0.2rem 0 0.1rem;">📌 ${t}</div>
+        return `<div style="margin-bottom:0.5rem;">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--muted);padding:0.2rem 0 0.2rem 0.2rem;text-transform:uppercase;letter-spacing:0.03em;">📌 ${t}</div>
           ${lRows}
         </div>`;
       }).join('');
 
+      // Legacy unit-level lessons
       const legacyRows = legacyLessons.map((l,li)=>{
-        const globalIdx = allTopicLessons.length + li;
-        const lDone = isLessonDone(info.email, s.id, ui, globalIdx);
-        const score = getLessonScore(info.email, s.id, ui, globalIdx);
+        const globalIdx = topicLessonCount + li;
+        const lDone = isLessonDone(info.email,s.id,ui,globalIdx);
+        const score = getLessonScore(info.email,s.id,ui,globalIdx);
+        const lName = typeof l==='object' ? l.title : l;
+        const badge = lDone
+          ? `<span class="lesson-row-badge lbadge-done">✅ ${score!==null?score+'% · ':''}Re-read</span>`
+          : `<span class="lesson-row-badge lbadge-todo">📖 Study</span>`;
         return `<div class="lesson-row" onclick="openLesson(${si},${ui},${globalIdx})">
-          <div class="lesson-row-num">${li+1}</div>
-          <div class="lesson-row-text">${l}</div>
-          <span class="lesson-row-badge ${lDone?'lbadge-done':'lbadge-todo'}">${lDone?'✅ Done'+(score!==null?' · '+score+'%':''):'Study'}</span>
+          <div class="lesson-row-num">${globalIdx+1}</div>
+          <div class="lesson-row-text">${lName}</div>
+          ${badge}
         </div>`;
       }).join('');
 
-      const lessonRows = (topicLessonRows||legacyRows)
-        ? (topicLessonRows+legacyRows)||'<div class="syl-no-lessons">No lessons posted yet — check back soon</div>'
+      const allRows = topicLessonRows + legacyRows;
+      const lessonRows = allRows.trim()
+        ? allRows
         : '<div class="syl-no-lessons">No lessons posted yet — check back soon</div>';
-      const lessonTotal = lessonCount;
 
-      const unitTestLabel = unitDone ? '✅ Unit Test Passed' : (allLessonsDone ? '🎯 Take Unit Test' : `Complete all ${lessonTotal} lessons to unlock unit test`);
-      const unitTestCls = 'unit-test-btn' + (unitDone?' done':allLessonsDone?' unlocked':'');
-      const unitTestOnclick = (allLessonsDone && !unitDone) ? `onclick="startUnitTest(${si},${ui})"` : '';
+      const unitTestLabel = unitDone
+        ? '✅ Unit Test Passed'
+        : allLessonsDone
+          ? '🎯 Take Unit Test'
+          : `📋 Complete all ${lessonTotal} lessons to unlock unit test`;
+      const unitTestCls  = 'unit-test-btn' + (unitDone?' done':allLessonsDone?' unlocked':'');
+      const unitTestAttr = (allLessonsDone && !unitDone) ? `onclick="startUnitTest(${si},${ui})"` : '';
 
       return `<div class="syl-unit">
         <div class="syl-unit-header" onclick="toggleUnit(this)">
-          <span class="syl-unit-title">${u.name}</span>
-          <span style="font-size:0.7rem;color:var(--muted);margin-right:0.5rem;">${lessonTotal>0?done+'/'+lessonTotal+' done':''}</span>
+          <span class="syl-unit-title">${u.name||'Unit '+(ui+1)}</span>
+          <span style="font-size:0.7rem;color:var(--muted);margin-right:0.5rem;">${lessonTotal>0?doneCount+'/'+lessonTotal+' done':''}</span>
           <span class="syl-unit-arrow">▼</span>
         </div>
         <div class="syl-unit-body">
-          ${total>0?`<div class="unit-progress-bar"><div class="unit-progress-fill" style="width:${pct}%"></div></div>`:''}
-          <div style="font-size:0.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;margin-bottom:0.4rem;margin-top:0.3rem;">📖 Lessons</div>
+          ${lessonTotal>0?`<div class="unit-progress-bar"><div class="unit-progress-fill" style="width:${pct}%"></div></div>`:''}
+          <div style="font-size:0.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;margin-bottom:0.4rem;margin-top:0.2rem;">📖 Lessons</div>
           ${lessonRows}
-          ${total>0?`<button class="${unitTestCls}" ${unitTestOnclick}>${unitTestLabel}</button>`:''}
+          ${lessonTotal>0?`<button class="${unitTestCls}" ${unitTestAttr}>${unitTestLabel}</button>`:''}
         </div>
       </div>`;
     }).join('');
-    const sp2 = subjProgress[si];
+
+    const sp2 = subjStats[si];
     const spCol = sp2.pct>=100?'#276749':sp2.pct>=50?'#c9882a':'#718096';
-    const spBar = sp2.total>0 ? `<div style="background:#e8edf2;border-radius:4px;height:6px;margin-bottom:0.8rem;overflow:hidden;"><div style="width:${sp2.pct}%;height:100%;background:${spCol};border-radius:4px;transition:width 0.5s;"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem;margin-top:-0.5rem;">
+    const spBar = sp2.total>0 ? `<div style="background:#e8edf2;border-radius:4px;height:6px;margin-bottom:0.5rem;overflow:hidden;"><div style="width:${sp2.pct}%;height:100%;background:${spCol};border-radius:4px;transition:width 0.5s;"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem;">
         <span>${sp2.done}/${sp2.total} lessons completed</span>
         <span style="font-weight:700;color:${spCol};">${sp2.pct}%${sp2.pct>=100?' ✅':''}</span>
       </div>` : '';
+
     return `<div class="syl-panel${si===0?' active':''}" id="std-syl-${si}">${spBar}${unitRows||'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;">No units listed yet.</div>'}</div>`;
   }).join('');
-  el.innerHTML = `<div class="syllabus-tabs">${tabs}</div>${panels}`;
+
+  el.innerHTML = `<div class="syl-tabs">${tabs}</div><div>${panels}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // OPEN LESSON
 // ═══════════════════════════════════════════════════════════════════
 async function openLessonByTopic(si, ui, ti, li){
-  // Compute global lesson index from topic index
   const info = currentUserInfo; if(!info) return;
   const subjs = sylData[info.yearOfStudy]||[];
   const subj = subjs[si]; if(!subj) return;
-  const unit = (subj.units||[])[ui]; if(!unit) return;
+  const u0 = (subj.units||[])[ui]; if(!u0) return;
+  const unit = typeof u0==='string' ? {name:u0,topics:[],lessons:[],topicLessons:{}} : u0;
   const topicLessons = unit.topicLessons||{};
   const lesson = (topicLessons[ti]||[])[li];
   if(!lesson) return;
   const globalIdx = (unit.topics||[]).slice(0,ti).reduce((a,_,i2)=>a+(topicLessons[i2]||[]).length,0)+li;
-  currentLesson = {si,ui,li:globalIdx,subjectId:subj.id,subjectName:subj.name,unitName:unit.name,lessonName:lesson,topics:unit.topics||[],topicName:(unit.topics||[])[ti]||''};
+  currentLesson = {si,ui,li:globalIdx,subjectId:subj.id,subjectName:subj.name,unitName:unit.name,lessonName:(typeof lesson==='object'?lesson.title:lesson),lessonObj:lesson,topics:unit.topics||[],topicName:(unit.topics||[])[ti]||''};
   document.getElementById('lessonTitle').textContent = lesson;
   document.getElementById('lessonMeta').textContent = subj.name+' · '+((unit.topics||[])[ti]||unit.name);
   document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div>Generating study material using AI…</div>';
@@ -5799,10 +5857,11 @@ async function openLesson(si, ui, li){
   const info = currentUserInfo; if(!info) return;
   const subjs = sylData[info.yearOfStudy] || [];
   const subj = subjs[si]; if(!subj) return;
-  const unit = (subj.units||[])[ui]; if(!unit) return;
+  const u0ol = (subj.units||[])[ui]; if(!u0ol) return;
+  const unit = typeof u0ol==='string' ? {name:u0ol,topics:[],lessons:[u0ol],topicLessons:{}} : u0ol;
   const lesson = (unit.lessons||[])[li]; if(!lesson) return;
 
-  currentLesson = {si, ui, li, subjectId:subj.id, subjectName:subj.name, unitName:unit.name, lessonName:lesson, topics:unit.topics||[]};
+  currentLesson = {si, ui, li, subjectId:subj.id, subjectName:subj.name, unitName:unit.name||('Unit '+(ui+1)), lessonName:lesson, topics:unit.topics||[]};
 
   document.getElementById('lessonMeta').textContent = subj.name + ' · ' + unit.name;
   document.getElementById('lessonOverlay').classList.add('active');
