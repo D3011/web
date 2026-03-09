@@ -4137,7 +4137,7 @@ function renderSylAdmin(){
       const lessonsHTML = (u.lessons||[]).map((l,li)=>`
         <div class="fac-lesson-row">
           <span class="fac-lesson-idx">${li+1}</span>
-          <span class="fac-lesson-txt">${l}</span>
+          <span class="fac-lesson-txt">${typeof l==='object'?l.title:l}</span>${typeof l==='object'&&l.content?'<span style="font-size:0.65rem;background:#e8f5e9;color:#2e7d32;border-radius:3px;padding:1px 5px;margin-left:4px;">📄 has content</span>':''}
           <div class="admin-list-actions" style="opacity:1;">
             <button class="btn-edit" onclick="editLesson(${si},${ui},${li})">&#9998;</button>
             <button class="btn-del" onclick="deleteLesson(${si},${ui},${li})">&#10005;</button>
@@ -4151,7 +4151,7 @@ function renderSylAdmin(){
         const lessonsForTopic = tLessons.map((l,li)=>`
           <div class="fac-lesson-row" style="margin-left:0.5rem;">
             <span class="fac-lesson-idx">${li+1}</span>
-            <span class="fac-lesson-txt">${l}</span>
+            <span class="fac-lesson-txt">${typeof l==='object'?l.title:l}</span>${typeof l==='object'&&l.content?'<span style="font-size:0.65rem;background:#e8f5e9;color:#2e7d32;border-radius:3px;padding:1px 5px;margin-left:4px;">📄 has content</span>':''}
             <div class="admin-list-actions" style="opacity:1;">
               <button class="btn-edit" onclick="editTopicLesson(${si},${ui},${ti},${li})">&#9998;</button>
               <button class="btn-del" onclick="deleteTopicLesson(${si},${ui},${ti},${li})">&#10005;</button>
@@ -4205,25 +4205,13 @@ function renderSylAdmin(){
 
 // ── Per-Topic Lesson CRUD ──
 async function addTopicLesson(si,ui,ti){
-  const inp = document.getElementById('tl_'+si+'_'+ui+'_'+ti);
-  const txt = inp ? inp.value.trim() : '';
-  if(!txt){ adminToast('Enter a lesson title.'); return; }
-  if(!sylData[facSylYear][si].units[ui].topicLessons) sylData[facSylYear][si].units[ui].topicLessons={};
-  if(!sylData[facSylYear][si].units[ui].topicLessons[ti]) sylData[facSylYear][si].units[ui].topicLessons[ti]=[];
-  sylData[facSylYear][si].units[ui].topicLessons[ti].push(txt);
-  if(inp) inp.value='';
-  await saveSyllabusLessons(facSylYear,si);
-  renderSylAdmin();
-  adminToast('Lesson added! ✅');
+  openLessonEditor(si, ui, ti, null, 'add');
 }
+
 async function editTopicLesson(si,ui,ti,li){
-  const cur = sylData[facSylYear][si].units[ui].topicLessons?.[ti]?.[li];
-  const v = prompt('Edit lesson:', cur||'');
-  if(v===null||!v.trim()) return;
-  sylData[facSylYear][si].units[ui].topicLessons[ti][li]=v.trim();
-  await saveSyllabusLessons(facSylYear,si);
-  renderSylAdmin(); adminToast('Updated! ✅');
+  openLessonEditor(si, ui, ti, li, 'edit');
 }
+
 async function deleteTopicLesson(si,ui,ti,li){
   if(!confirm('Delete this lesson?')) return;
   sylData[facSylYear][si].units[ui].topicLessons[ti].splice(li,1);
@@ -4232,25 +4220,14 @@ async function deleteTopicLesson(si,ui,ti,li){
 }
 
 // ── (Legacy) Unit-level Lesson CRUD kept for backward compat ──
-async function addLesson(si,ui){
-  const inp = document.getElementById(`nl_${si}_${ui}`);
-  const txt = inp ? inp.value.trim() : '';
-  if(!txt){ adminToast('Enter a lesson title.'); return; }
-  sylData[facSylYear][si].units[ui].lessons.push(txt);
-  if(inp) inp.value='';
-  await saveSyllabusLessons(facSylYear, si);
-  renderSylAdmin();
-  adminToast('Lesson added! \u2705');
+function addLesson(si,ui){
+  openLessonEditor(si, ui, null, null, 'add');
 }
-async function editLesson(si,ui,li){
-  const cur = sylData[facSylYear][si].units[ui].lessons[li];
-  const v = prompt('Edit lesson:', cur);
-  if(v===null || !v.trim()) return;
-  sylData[facSylYear][si].units[ui].lessons[li] = v.trim();
-  await saveSyllabusLessons(facSylYear, si);
-  renderSylAdmin();
-  adminToast('Updated! \u2705');
+
+function editLesson(si,ui,li){
+  openLessonEditor(si, ui, null, li, 'edit');
 }
+
 async function deleteLesson(si,ui,li){
   if(!confirm('Delete this lesson?')) return;
   sylData[facSylYear][si].units[ui].lessons.splice(li,1);
@@ -4713,6 +4690,293 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   testFbConnection();             // non-blocking — loads core data on success
 });
 
+
+// ═══════════════════════════════════════════════════════════
+// RICH TEXT LESSON EDITOR
+// ═══════════════════════════════════════════════════════════
+let _ledCtx = null; // {si,ui,ti,li,mode:'add'|'edit', type:'topic'|'unit'}
+let _ledDirty = false;
+
+function openLessonEditor(si, ui, ti, li, mode) {
+  // mode: 'add' or 'edit', type determined by ti===null => unit lesson, else topic lesson
+  const isEdit = mode === 'edit';
+  const isTopic = ti !== null && ti !== undefined;
+  _ledCtx = { si, ui, ti: isTopic ? ti : null, li: isEdit ? li : null, mode, isTopic };
+  _ledDirty = false;
+
+  const subj = sylData[facSylYear]?.[si];
+  const unit = subj?.units?.[ui];
+  const subjName = subj?.name || '';
+  const unitName = unit?.name || '';
+  const topicName = isTopic ? (unit?.topics?.[ti] || '') : '';
+
+  document.getElementById('ledTitle').textContent = isEdit ? 'Edit Lesson' : 'Add Lesson';
+  document.getElementById('ledMeta').textContent = subjName + ' › ' + unitName + (topicName ? ' › ' + topicName : '');
+  document.getElementById('ledStatus').textContent = 'Ready';
+
+  // Load existing data if editing
+  const editor = document.getElementById('ledEditor');
+  const titleInp = document.getElementById('ledLessonTitle');
+  
+  if (isEdit) {
+    let lessonObj;
+    if (isTopic) {
+      lessonObj = unit?.topicLessons?.[ti]?.[li];
+    } else {
+      lessonObj = unit?.lessons?.[li];
+    }
+    const isObj = lessonObj && typeof lessonObj === 'object';
+    titleInp.value = isObj ? (lessonObj.title || '') : (lessonObj || '');
+    editor.innerHTML = isObj ? (lessonObj.content || '') : '';
+  } else {
+    titleInp.value = '';
+    editor.innerHTML = '';
+  }
+
+  const modal = document.getElementById('lessonEditorModal');
+  modal.style.display = 'flex';
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => titleInp.focus(), 100);
+}
+
+function closeLessonEditor() {
+  if (_ledDirty && !confirm('You have unsaved changes. Close anyway?')) return;
+  const m = document.getElementById('lessonEditorModal');
+  m.classList.remove('active');
+  m.style.display = 'none';
+  document.body.style.overflow = '';
+  _ledCtx = null;
+  _ledDirty = false;
+}
+
+function ledMarkDirty() { _ledDirty = true; }
+
+function ledExec(cmd, val) {
+  document.getElementById('ledEditor').focus();
+  document.execCommand(cmd, false, val || null);
+  _ledDirty = true;
+}
+
+function ledApplyStyle(tag) {
+  document.getElementById('ledEditor').focus();
+  if (!tag) { document.execCommand('formatBlock', false, 'p'); return; }
+  document.execCommand('formatBlock', false, tag);
+  _ledDirty = true;
+}
+
+function ledInsertImage() {
+  document.getElementById('ledImgInput').click();
+}
+
+function ledHandleImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { adminToast('Image too large (max 2MB).'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const editor = document.getElementById('ledEditor');
+    editor.focus();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'led-img-wrap';
+    wrapper.style.cssText = 'display:inline-block;position:relative;max-width:100%;margin:6px 4px;vertical-align:top;';
+    wrapper.contentEditable = 'false';
+
+    const img = document.createElement('img');
+    img.src = e.target.result;
+    img.style.cssText = 'display:block;max-width:100%;border-radius:6px;cursor:default;';
+    img.draggable = false;
+
+    // Resize handle
+    const handle = document.createElement('div');
+    handle.className = 'led-resize-handle';
+    handle.style.cssText = 'position:absolute;bottom:4px;right:4px;width:14px;height:14px;background:var(--sky);border-radius:3px;cursor:se-resize;z-index:10;opacity:0;transition:opacity 0.2s;';
+    handle.title = 'Drag to resize';
+    handle.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 8L8 2M5 8L8 5M8 8L8 8" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+    // Float buttons
+    const floatBar = document.createElement('div');
+    floatBar.className = 'led-img-toolbar';
+    floatBar.style.cssText = 'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:var(--navy);border-radius:6px;padding:3px 6px;display:flex;gap:4px;opacity:0;transition:opacity 0.2s;z-index:20;white-space:nowrap;';
+    floatBar.innerHTML = `
+      <button onclick="ledImgFloat(this,'left')" title="Float Left" style="background:none;border:none;color:#fff;cursor:pointer;font-size:0.7rem;padding:2px 4px;">⬅ Left</button>
+      <button onclick="ledImgFloat(this,'none')" title="No Float" style="background:none;border:none;color:#fff;cursor:pointer;font-size:0.7rem;padding:2px 4px;">⬜ Inline</button>
+      <button onclick="ledImgFloat(this,'right')" title="Float Right" style="background:none;border:none;color:#fff;cursor:pointer;font-size:0.7rem;padding:2px 4px;">➡ Right</button>
+      <button onclick="ledImgSetWidth(this,25)" title="25%" style="background:none;border:none;color:#fff;cursor:pointer;font-size:0.7rem;padding:2px 4px;">25%</button>
+      <button onclick="ledImgSetWidth(this,50)" title="50%" style="background:none;border:none;color:#fff;cursor:pointer;font-size:0.7rem;padding:2px 4px;">50%</button>
+      <button onclick="ledImgSetWidth(this,75)" title="75%" style="background:none;border:none;color:#fff;cursor:pointer;font-size:0.7rem;padding:2px 4px;">75%</button>
+      <button onclick="ledImgSetWidth(this,100)" title="Full" style="background:none;border:none;color:#fff;cursor:pointer;font-size:0.7rem;padding:2px 4px;">Full</button>
+      <button onclick="ledImgDelete(this)" title="Delete" style="background:none;border:none;color:#fca5a5;cursor:pointer;font-size:0.7rem;padding:2px 4px;">🗑</button>
+    `;
+
+    wrapper.appendChild(floatBar);
+    wrapper.appendChild(img);
+    wrapper.appendChild(handle);
+
+    // Show toolbar on hover
+    wrapper.addEventListener('mouseenter', () => { floatBar.style.opacity='1'; handle.style.opacity='1'; });
+    wrapper.addEventListener('mouseleave', () => { floatBar.style.opacity='0'; handle.style.opacity='0'; });
+
+    // Drag-to-resize
+    let isResizing = false, startX, startW;
+    handle.addEventListener('mousedown', (ev) => {
+      ev.preventDefault();
+      isResizing = true;
+      startX = ev.clientX;
+      startW = img.offsetWidth;
+      const onMove = (e) => {
+        if (!isResizing) return;
+        const newW = Math.max(60, startW + (e.clientX - startX));
+        img.style.width = newW + 'px';
+        img.style.maxWidth = 'none';
+        wrapper.style.maxWidth = 'none';
+        _ledDirty = true;
+      };
+      const onUp = () => { isResizing = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // Insert at cursor or append
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(wrapper);
+      range.setStartAfter(wrapper);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      editor.appendChild(wrapper);
+    }
+    _ledDirty = true;
+    adminToast('Image inserted — hover to resize or reposition ✅');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function ledImgFloat(btn, val) {
+  const wrap = btn.closest('.led-img-wrap');
+  if (!wrap) return;
+  wrap.style.float = val;
+  wrap.style.marginLeft = val==='right' ? '12px' : (val==='left' ? '0' : '4px');
+  wrap.style.marginRight = val==='left' ? '12px' : (val==='right' ? '0' : '4px');
+  _ledDirty = true;
+}
+
+function ledImgSetWidth(btn, pct) {
+  const wrap = btn.closest('.led-img-wrap');
+  if (!wrap) return;
+  const img = wrap.querySelector('img');
+  if (!img) return;
+  const edW = document.getElementById('ledEditor').offsetWidth || 600;
+  img.style.width = Math.round(edW * pct / 100) + 'px';
+  img.style.maxWidth = 'none';
+  wrap.style.maxWidth = 'none';
+  _ledDirty = true;
+}
+
+function ledImgDelete(btn) {
+  const wrap = btn.closest('.led-img-wrap');
+  if (wrap && confirm('Delete this image?')) { wrap.remove(); _ledDirty = true; }
+}
+
+function ledInsertLink() {
+  const url = prompt('Enter URL:', 'https://');
+  if (!url || !url.trim()) return;
+  const text = prompt('Link text:', 'Click here');
+  if (text === null) return;
+  document.getElementById('ledEditor').focus();
+  document.execCommand('insertHTML', false, `<a href="${url}" target="_blank" style="color:var(--sky);">${text || url}</a>`);
+  _ledDirty = true;
+}
+
+function ledInsertTable() {
+  const rows = parseInt(prompt('Number of rows:', '3')) || 3;
+  const cols = parseInt(prompt('Number of columns:', '3')) || 3;
+  let html = '<table><thead><tr>';
+  for (let c = 0; c < cols; c++) html += `<th>Header ${c+1}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) html += '<td>&nbsp;</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table><p></p>';
+  document.getElementById('ledEditor').focus();
+  document.execCommand('insertHTML', false, html);
+  _ledDirty = true;
+}
+
+async function saveLessonFromEditor() {
+  const title = document.getElementById('ledLessonTitle').value.trim();
+  const content = document.getElementById('ledEditor').innerHTML.trim();
+  if (!title) { adminToast('Please enter a lesson title.'); document.getElementById('ledLessonTitle').focus(); return; }
+  
+  document.getElementById('ledStatus').textContent = 'Saving…';
+  const ctx = _ledCtx;
+  const lessonObj = content ? { title, content } : title; // store object if has content, else just string
+
+  const subj = sylData[facSylYear][ctx.si];
+  const unit = subj.units[ctx.ui];
+
+  if (ctx.isTopic) {
+    if (!unit.topicLessons) unit.topicLessons = {};
+    if (!unit.topicLessons[ctx.ti]) unit.topicLessons[ctx.ti] = [];
+    if (ctx.mode === 'edit') {
+      unit.topicLessons[ctx.ti][ctx.li] = lessonObj;
+    } else {
+      unit.topicLessons[ctx.ti].push(lessonObj);
+    }
+  } else {
+    if (!unit.lessons) unit.lessons = [];
+    if (ctx.mode === 'edit') {
+      unit.lessons[ctx.li] = lessonObj;
+    } else {
+      unit.lessons.push(lessonObj);
+    }
+  }
+
+  await saveSyllabusLessons(facSylYear, ctx.si);
+  _ledDirty = false;
+  document.getElementById('ledStatus').textContent = '✅ Saved!';
+  setTimeout(() => {
+    const ledM = document.getElementById('lessonEditorModal');
+    ledM.classList.remove('active');
+    ledM.style.display = 'none';
+    document.body.style.overflow = '';
+    _ledCtx = null;
+    renderSylAdmin();
+    adminToast('Lesson saved ✅');
+  }, 600);
+}
+
+
+// ══════════════════════════════════════════
+// FACULTY: Grant Re-test to a student
+// ══════════════════════════════════════════
+function grantRetestBtn(btn){
+  const ek = btn.dataset.ek;
+  const pk = btn.dataset.pk;
+  const label = btn.dataset.label || 'this lesson';
+  grantRetest(ek, pk, label);
+}
+async function grantRetest(emailKey, pk, label) {
+  if (!confirm('Grant re-test for "' + label + '"?\nThis will clear their previous score so they can re-attempt.')) return;
+  const prog = progressCache[emailKey] || {};
+  if (prog[pk]) {
+    delete prog[pk];
+    progressCache[emailKey] = prog;
+    await fbDel('/progress/' + emailKey + '/' + pk);
+    await fbDel('/quizAnswers/' + emailKey + '/' + pk);
+    adminToast('\u2705 Re-test granted for ' + label);
+    renderProgressAdmin();
+  } else {
+    adminToast('No existing attempt found for this lesson/test.');
+  }
+}
+
 // ── EXPOSE TO WINDOW ──
 window.toggleNav=toggleNav; window.openLogin=openLogin; window.closeLogin=closeLogin;
 window.selectRole=selectRole; window.goBack=goBack; window.doLogin=doLogin;
@@ -4764,6 +5028,21 @@ if(typeof autoMarkHolidaysForMonth!=='undefined') window.autoMarkHolidaysForMont
 if(typeof selectProgYear!=='undefined') window.selectProgYear=selectProgYear;
 if(typeof toggleProgDetail!=='undefined') window.toggleProgDetail=toggleProgDetail;
 if(typeof viewAnswers!=='undefined') window.viewAnswers=viewAnswers;
+window.openLessonEditor=openLessonEditor;
+window.closeLessonEditor=closeLessonEditor;
+window.ledExec=ledExec;
+window.ledApplyStyle=ledApplyStyle;
+window.ledInsertImage=ledInsertImage;
+window.ledHandleImageUpload=ledHandleImageUpload;
+window.ledInsertLink=ledInsertLink;
+window.ledInsertTable=ledInsertTable;
+window.saveLessonFromEditor=saveLessonFromEditor;
+window.ledMarkDirty=ledMarkDirty;
+window.ledImgFloat=ledImgFloat;
+window.ledImgSetWidth=ledImgSetWidth;
+window.ledImgDelete=ledImgDelete;
+window.grantRetest=grantRetest;
+window.grantRetestBtn=grantRetestBtn;
 if(typeof openLesson!=='undefined') window.openLesson=openLesson;
 if(typeof openLessonByTopic!=='undefined') window.openLessonByTopic=openLessonByTopic;
 if(typeof closeLessonOverlay!=='undefined') window.closeLessonOverlay=closeLessonOverlay;
@@ -5476,7 +5755,14 @@ function renderStudentSyllabus(info){
         </div>
       </div>`;
     }).join('');
-    return `<div class="syl-panel${si===0?' active':''}" id="std-syl-${si}">${unitRows||'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;">No units listed yet.</div>'}</div>`;
+    const sp2 = subjProgress[si];
+    const spCol = sp2.pct>=100?'#276749':sp2.pct>=50?'#c9882a':'#718096';
+    const spBar = sp2.total>0 ? `<div style="background:#e8edf2;border-radius:4px;height:6px;margin-bottom:0.8rem;overflow:hidden;"><div style="width:${sp2.pct}%;height:100%;background:${spCol};border-radius:4px;transition:width 0.5s;"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem;margin-top:-0.5rem;">
+        <span>${sp2.done}/${sp2.total} lessons completed</span>
+        <span style="font-weight:700;color:${spCol};">${sp2.pct}%${sp2.pct>=100?' ✅':''}</span>
+      </div>` : '';
+    return `<div class="syl-panel${si===0?' active':''}" id="std-syl-${si}">${spBar}${unitRows||'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;">No units listed yet.</div>'}</div>`;
   }).join('');
   el.innerHTML = `<div class="syllabus-tabs">${tabs}</div>${panels}`;
 }
@@ -5518,23 +5804,41 @@ async function openLesson(si, ui, li){
 
   currentLesson = {si, ui, li, subjectId:subj.id, subjectName:subj.name, unitName:unit.name, lessonName:lesson, topics:unit.topics||[]};
 
-  document.getElementById('lessonTitle').textContent = lesson;
   document.getElementById('lessonMeta').textContent = subj.name + ' · ' + unit.name;
-  document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div>Generating study material using AI\u2026</div>';
   document.getElementById('lessonOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
-
-  // Anti-malpractice: no text selection/copy
   document.getElementById('lessonBody').style.userSelect = 'none';
 
-  // Generate study material
-  const material = await generateLessonContent(lesson, unit.name, subj.name, unit.topics||[]);
-  document.getElementById('lessonBody').innerHTML = `
-    <div class="lesson-content-box">${material}</div>
-    <div style="text-align:center;margin:1.5rem 0;">
-      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">You have read the lesson. Ready to test your knowledge?</p>
-      <button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.8rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">🎯 Take Lesson Quiz</button>
-    </div>`;
+  // Check if lesson has rich content written by faculty
+  const isRich = lesson && typeof lesson === 'object' && lesson.content;
+  const lessonName = isRich ? lesson.title : (typeof lesson === 'string' ? lesson : String(lesson));
+  document.getElementById('lessonTitle').textContent = lessonName;
+
+  if (isRich) {
+    const lk = progKey(subj.id, ui, li);
+    const alreadyDone = !!(progressCache[eKey(info.email)]?.[lk]?.done);
+    document.getElementById('lessonBody').innerHTML = `
+      <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.5rem 1rem;font-size:1rem;line-height:1.8;">
+        ${lesson.content}
+      </div>
+      <div style="text-align:center;margin:1.5rem 0;">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">${alreadyDone?'You have already completed this lesson. Re-read anytime! Want to retake the quiz?':'You have read the lesson. Ready to test your knowledge?'}</p>
+        <button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.8rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">${alreadyDone?'🔁 Retake Quiz':'🎯 Take Lesson Quiz'}</button>
+        ${alreadyDone?'<button onclick="closeLessonOverlay()" style="margin-left:0.8rem;background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.8rem 1.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">✅ Back to Syllabus</button>':''}
+      </div>`;
+  } else {
+    document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div>Generating study material using AI…</div>';
+    const material = await generateLessonContent(lessonName, unit.name, subj.name, unit.topics||[]);
+    const lk2 = progKey(subj.id, ui, li);
+    const alreadyDone2 = !!(progressCache[eKey(info.email)]?.[lk2]?.done);
+    document.getElementById('lessonBody').innerHTML = `
+      <div class="lesson-content-box">${material}</div>
+      <div style="text-align:center;margin:1.5rem 0;">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">${alreadyDone2?'You have already completed this lesson. Want to retake the quiz?':'You have read the lesson. Ready to test your knowledge?'}</p>
+        <button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.8rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">${alreadyDone2?'🔁 Retake Quiz':'🎯 Take Lesson Quiz'}</button>
+        ${alreadyDone2?'<button onclick="closeLessonOverlay()" style="margin-left:0.8rem;background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.8rem 1.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">✅ Back to Syllabus</button>':''}
+      </div>`;
+  }
 }
 
 function closeLessonOverlay(){
@@ -5954,11 +6258,13 @@ function renderStudentProgressDetail(u, subjs, prog){
           const done = p&&p.done;
           const score = p?p.score:null;
           const hasDesc = p&&p.answers&&p.answers.some(a=>a.pendingReview);
-          return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size:0.78rem;border-radius:4px;${done?'background:#f0fff4;':''}" >
+          const lLabel = typeof l==='object' ? l.title : l;
+          return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size:0.78rem;border-radius:4px;${done?'background:#f0fff4;':''}">
             <span>${done?'✅':'⬜'}</span>
-            <span style="flex:1;color:var(--navy);">${l}</span>
+            <span style="flex:1;color:var(--navy);">${lLabel}</span>
             ${score!==null?`<span style="font-size:0.72rem;color:${score>=90?'#276749':score>=60?'#c9882a':'#e53e3e'};font-weight:700;">${score}%</span>`:''}
-            ${hasDesc?`<button onclick="viewAnswers('${ek}','${pk.replace(/'/g,"\\'")}')" style="font-size:0.68rem;padding:2px 7px;background:#f0f4ff;color:var(--navy);border:1px solid #c5d0e6;border-radius:4px;cursor:pointer;">View Answers</button>`:''}
+            ${hasDesc?`<button onclick="viewAnswers('${ek}','${pk.replace(/'/g,"\\'")}')" style="font-size:0.68rem;padding:2px 6px;background:#f0f4ff;color:var(--navy);border:1px solid #c5d0e6;border-radius:4px;cursor:pointer;">📝 Answers</button>`:''}
+            ${p?`<button onclick="grantRetest('${ek}','${pk.replace(/'/g,"\\'")}','${lLabel.replace(/'/g,"\\'")}' )" style="font-size:0.68rem;padding:2px 6px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;cursor:pointer;">🔄 Re-test</button>`:''}
           </div>`;
         }).join('');
         const unitPk = progKey(s.id,ui,null);
@@ -5966,7 +6272,10 @@ function renderStudentProgressDetail(u, subjs, prog){
         return `<div style="margin-left:0.5rem;margin-bottom:0.5rem;">
           <div style="font-size:0.73rem;color:var(--muted);margin-bottom:0.2rem;">${unit.name}</div>
           ${lessonRows||'<div style="font-size:0.73rem;color:#aaa;padding:0.2rem 0.5rem;">No lessons yet</div>'}
-          ${unitP?`<div style="font-size:0.73rem;padding:0.25rem 0.5rem;background:${unitP.done?'#f0fff4':'#fff5f5'};border-radius:4px;margin-top:0.2rem;">Unit Test: ${unitP.done?'✅ Passed':'❌ Failed'} · ${unitP.score}%</div>`:''}
+          ${unitP?`<div style="display:flex;align-items:center;gap:0.5rem;font-size:0.73rem;padding:0.25rem 0.5rem;background:${unitP.done?'#f0fff4':'#fff5f5'};border-radius:4px;margin-top:0.2rem;">
+            <span style="flex:1;">Unit Test: ${unitP.done?'✅ Passed':'❌ Failed'} · ${unitP.score}%</span>
+            <button data-ek="${ek}" data-pk="${unitPk}" data-label="Unit Test" onclick="grantRetestBtn(this)" style="font-size:0.68rem;padding:2px 7px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;cursor:pointer;">🔄 Re-test</button>
+          </div>`:''}
         </div>`;
       }).join('')}
     </div>`;
@@ -6003,5 +6312,107 @@ function viewAnswers(ek, pk){
   document.body.appendChild(modal);
 }
 </script>
+
+<!-- ══ RICH TEXT LESSON EDITOR MODAL ══ -->
+<div id="lessonEditorModal" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);align-items:flex-start;justify-content:center;padding:1.5rem;box-sizing:border-box;overflow-y:auto;display:none;">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:900px;box-shadow:0 24px 64px rgba(0,0,0,0.35);display:flex;flex-direction:column;min-height:80vh;margin:auto;">
+    <!-- Header -->
+    <div style="background:var(--navy);color:#fff;padding:0.9rem 1.4rem;border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <div style="font-family:'Merriweather',serif;font-size:1rem;font-weight:700;" id="ledTitle">Add Lesson</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);" id="ledMeta"></div>
+      </div>
+      <button onclick="closeLessonEditor()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:5px 14px;cursor:pointer;font-family:inherit;font-size:0.82rem;">✕ Close</button>
+    </div>
+
+    <!-- Lesson Title Input -->
+    <div style="padding:0.9rem 1.2rem 0;border-bottom:1px solid #e8edf2;">
+      <input id="ledLessonTitle" type="text" placeholder="Lesson Title (required)" style="width:100%;box-sizing:border-box;font-family:'Source Sans 3',sans-serif;font-size:1rem;font-weight:700;color:var(--navy);border:none;outline:none;padding:0.3rem 0;background:transparent;"/>
+    </div>
+
+    <!-- Toolbar -->
+    <div id="ledToolbar" style="display:flex;flex-wrap:wrap;gap:4px;padding:0.6rem 1rem;border-bottom:2px solid #e8edf2;background:#f8faff;align-items:center;">
+      <!-- Font Family -->
+      <select onchange="ledExec('fontName',this.value);this.blur()" title="Font" style="font-size:0.78rem;border:1px solid #cdd5e0;border-radius:4px;padding:3px 6px;background:#fff;color:var(--navy);cursor:pointer;height:28px;">
+        <option value="'Source Sans 3',sans-serif">Source Sans</option>
+        <option value="'Merriweather',serif">Merriweather</option>
+        <option value="Arial,sans-serif">Arial</option>
+        <option value="'Times New Roman',serif">Times New Roman</option>
+        <option value="'Courier New',monospace">Courier New</option>
+        <option value="Georgia,serif">Georgia</option>
+      </select>
+      <!-- Font Size -->
+      <select onchange="ledExec('fontSize',this.value);this.blur()" title="Size" style="font-size:0.78rem;border:1px solid #cdd5e0;border-radius:4px;padding:3px 6px;background:#fff;color:var(--navy);cursor:pointer;height:28px;">
+        <option value="1">8pt</option><option value="2">10pt</option><option value="3" selected>12pt</option>
+        <option value="4">14pt</option><option value="5">18pt</option><option value="6">24pt</option><option value="7">36pt</option>
+      </select>
+      <span style="width:1px;height:22px;background:#cdd5e0;margin:0 2px;display:inline-block;"></span>
+      <!-- Style Presets -->
+      <select onchange="ledApplyStyle(this.value);this.blur()" title="Style" style="font-size:0.78rem;border:1px solid #cdd5e0;border-radius:4px;padding:3px 6px;background:#fff;color:var(--navy);cursor:pointer;height:28px;">
+        <option value="">Paragraph</option>
+        <option value="h1">Heading 1</option>
+        <option value="h2">Heading 2</option>
+        <option value="h3">Heading 3</option>
+        <option value="blockquote">Blockquote</option>
+        <option value="pre">Code Block</option>
+      </select>
+      <span style="width:1px;height:22px;background:#cdd5e0;margin:0 2px;display:inline-block;"></span>
+      <!-- Text Format -->
+      <button onclick="ledExec('bold')" title="Bold" class="led-btn"><b>B</b></button>
+      <button onclick="ledExec('italic')" title="Italic" class="led-btn"><i>I</i></button>
+      <button onclick="ledExec('underline')" title="Underline" class="led-btn"><u>U</u></button>
+      <button onclick="ledExec('strikeThrough')" title="Strikethrough" class="led-btn" style="text-decoration:line-through;">S</button>
+      <span style="width:1px;height:22px;background:#cdd5e0;margin:0 2px;display:inline-block;"></span>
+      <!-- Colors -->
+      <label title="Text Color" style="display:flex;align-items:center;gap:3px;font-size:0.72rem;color:var(--muted);cursor:pointer;">
+        A <input type="color" value="#0b2545" onchange="ledExec('foreColor',this.value)" style="width:22px;height:22px;border:none;cursor:pointer;padding:0;background:none;">
+      </label>
+      <label title="Highlight" style="display:flex;align-items:center;gap:3px;font-size:0.72rem;color:var(--muted);cursor:pointer;">
+        🖊 <input type="color" value="#fff176" onchange="ledExec('hiliteColor',this.value)" style="width:22px;height:22px;border:none;cursor:pointer;padding:0;background:none;">
+      </label>
+      <span style="width:1px;height:22px;background:#cdd5e0;margin:0 2px;display:inline-block;"></span>
+      <!-- Alignment -->
+      <button onclick="ledExec('justifyLeft')" title="Align Left" class="led-btn">⬅</button>
+      <button onclick="ledExec('justifyCenter')" title="Center" class="led-btn">↔</button>
+      <button onclick="ledExec('justifyRight')" title="Align Right" class="led-btn">➡</button>
+      <button onclick="ledExec('justifyFull')" title="Justify" class="led-btn">▤</button>
+      <span style="width:1px;height:22px;background:#cdd5e0;margin:0 2px;display:inline-block;"></span>
+      <!-- Lists -->
+      <button onclick="ledExec('insertUnorderedList')" title="Bullet List" class="led-btn">• ≡</button>
+      <button onclick="ledExec('insertOrderedList')" title="Numbered List" class="led-btn">1. ≡</button>
+      <span style="width:1px;height:22px;background:#cdd5e0;margin:0 2px;display:inline-block;"></span>
+      <!-- Image -->
+      <button onclick="ledInsertImage()" title="Insert Image" class="led-btn" style="font-size:0.72rem;padding:3px 8px;">🖼 Image</button>
+      <!-- Link -->
+      <button onclick="ledInsertLink()" title="Insert Link" class="led-btn" style="font-size:0.72rem;padding:3px 8px;">🔗 Link</button>
+      <!-- Table -->
+      <button onclick="ledInsertTable()" title="Insert Table" class="led-btn" style="font-size:0.72rem;padding:3px 8px;">⊞ Table</button>
+      <span style="width:1px;height:22px;background:#cdd5e0;margin:0 2px;display:inline-block;"></span>
+      <!-- Undo/Redo -->
+      <button onclick="ledExec('undo')" title="Undo" class="led-btn">↩</button>
+      <button onclick="ledExec('redo')" title="Redo" class="led-btn">↪</button>
+    </div>
+
+    <!-- Editor Area -->
+    <div id="ledEditor" contenteditable="true" spellcheck="true"
+      style="flex:1;min-height:380px;padding:1.5rem 1.8rem;font-family:'Source Sans 3',sans-serif;font-size:14px;line-height:1.8;color:#1a1a2e;outline:none;overflow-y:auto;border-bottom:2px solid #e8edf2;"
+      oninput="ledMarkDirty()"
+      placeholder="Start writing the lesson content here…">
+    </div>
+
+    <!-- Image upload input (hidden) -->
+    <input type="file" id="ledImgInput" accept="image/*" style="display:none;" onchange="ledHandleImageUpload(this)">
+
+    <!-- Footer Actions -->
+    <div style="padding:0.9rem 1.4rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-top:1px solid #e8edf2;background:#f8faff;border-radius:0 0 14px 14px;">
+      <div style="font-size:0.75rem;color:var(--muted);" id="ledStatus">Ready</div>
+      <div style="display:flex;gap:0.6rem;">
+        <button onclick="closeLessonEditor()" style="background:#e8edf2;border:none;border-radius:7px;padding:0.48rem 1.2rem;cursor:pointer;font-family:inherit;font-size:0.85rem;color:var(--navy);">Cancel</button>
+        <button onclick="saveLessonFromEditor()" style="background:var(--gold);color:#fff;border:none;border-radius:7px;padding:0.48rem 1.4rem;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:700;box-shadow:0 2px 8px rgba(201,136,42,0.3);">💾 Save Lesson</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
