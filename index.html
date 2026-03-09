@@ -3371,6 +3371,23 @@ async function fbPush(path,data){
   }catch(e){ return null; }
 }
 
+async function fbSet(path,data){
+  try{
+    const r=await fetch(DB+path+'.json',{method:'PUT',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});
+    if(!r.ok){ console.warn('[fbSet fail]',path,r.status); return null; }
+    if(!FB_ONLINE){ FB_ONLINE=true; showFbBanner('online'); }
+    return await r.json();
+  }catch(e){ console.warn('[fbSet error]',path,e.message); return null; }
+}
+
+async function fbDel(path){
+  try{
+    const r=await fetch(DB+path+'.json',{method:'DELETE'});
+    if(!r.ok) return null;
+    if(!FB_ONLINE){ FB_ONLINE=true; showFbBanner('online'); }
+    return true;
+  }catch(e){ return null; }
+}
 
 function fbSaving(show){ const el=document.getElementById('attSavingStatus'); if(el) el.style.display=show?'inline':'none'; }
 
@@ -3670,18 +3687,17 @@ async function openPortal(info,user){
   await loadProgress(info.email);
   renderStudentSyllabus(info);
   renderStudentFlash(); renderStudentNotifs();
-  renderStudentMarks(info);  // always does fresh fbGet internally
+  await renderStudentMarks(info);  // fresh fbGet internally
 
   // Load attendance from Firebase then render
   const ek=eKey(info.email);
-  // Always fetch fresh attendance (never use cached)
   attendanceCache[ek]={};
   const attData=await fbGet('/attendance/'+ek);
   if(attData&&typeof attData==='object') attendanceCache[ek]=attData;
   stdAttCalMonth=new Date().getMonth();
   stdAttCalYear=new Date().getFullYear();
   stdAttActiveSubj=null;
-  renderStudentAttendance(info);
+  await renderStudentAttendance(info);
   renderStudentCalendar();
 
   // Show dev access UI for student-developers
@@ -3773,10 +3789,12 @@ async function renderStudentMarks(info){
 // ── Student Attendance Calendar ──
 async function renderStudentAttendance(info){
   const el=document.getElementById('stdAttBody'); if(!el)return;
-  // Always fetch fresh attendance from Firebase
   const ek=eKey(info.email);
-  const fresh=await fbGet('/attendance/'+ek);
-  if(fresh&&typeof fresh==='object') attendanceCache[ek]=fresh;
+  // Fetch fresh from Firebase if cache is empty
+  if(!attendanceCache[ek] || Object.keys(attendanceCache[ek]).length===0){
+    const fresh=await fbGet('/attendance/'+ek);
+    if(fresh&&typeof fresh==='object') attendanceCache[ek]=fresh;
+  }
   el.innerHTML=buildStudentAttCal(info);
   updateStdAttBadge(info);
 }
