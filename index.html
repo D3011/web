@@ -5838,20 +5838,48 @@ async function openLessonByTopic(si, ui, ti, li){
   const lesson = (topicLessons[ti]||[])[li];
   if(!lesson) return;
   const globalIdx = (unit.topics||[]).slice(0,ti).reduce((a,_,i2)=>a+(topicLessons[i2]||[]).length,0)+li;
-  currentLesson = {si,ui,li:globalIdx,subjectId:subj.id,subjectName:subj.name,unitName:unit.name,lessonName:(typeof lesson==='object'?lesson.title:lesson),lessonObj:lesson,topics:unit.topics||[],topicName:(unit.topics||[])[ti]||''};
+  const _obtName = typeof lesson==='object'?lesson.title:lesson;
+  const _obtContent = (lesson && typeof lesson==='object' && lesson.content) ? lesson.content : null;
+  currentLesson = {si,ui,li:globalIdx,subjectId:subj.id,subjectName:subj.name,unitName:unit.name,lessonName:_obtName,lessonContent:_obtContent,lessonObj:lesson,topics:unit.topics||[],topicName:(unit.topics||[])[ti]||''};
   document.getElementById('lessonTitle').textContent = lesson;
   document.getElementById('lessonMeta').textContent = subj.name+' · '+((unit.topics||[])[ti]||unit.name);
   document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div>Generating study material using AI…</div>';
+  document.getElementById('lessonTitle').textContent = _obtName;
+  document.getElementById('lessonMeta').textContent = subj.name + ' · ' + unit.name;
+  document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div><div>Loading lesson\u2026</div></div>';
   document.getElementById('lessonOverlay').classList.add('active');
   document.body.style.overflow='hidden';
   document.getElementById('lessonBody').style.userSelect='none';
-  const material = await generateLessonContent(lesson, unit.name, subj.name, unit.topics||[]);
-  document.getElementById('lessonBody').innerHTML = `
-    <div class="lesson-content-box">${material}</div>
-    <div style="text-align:center;margin:1.5rem 0;">
-      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">You have read the lesson. Ready to test your knowledge?</p>
-      <button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.8rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">🎯 Take Lesson Quiz</button>
-    </div>`;
+
+  const _obtLk = progKey(subj.id, ui, globalIdx);
+  const _obtDone = !!(progressCache[eKey(info.email)]?.[_obtLk]?.done);
+  const _obtQuizBtn = _obtDone
+    ? `<button onclick="closeLessonAndStartQuiz()" style="background:var(--sky);color:#fff;border:none;border-radius:8px;padding:0.75rem 2rem;font-size:0.9rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">🔁 Retake Quiz</button>
+       <button onclick="closeLessonOverlay()" style="background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.75rem 1.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">✅ Close</button>`
+    : `<button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.75rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">🎯 Take Lesson Quiz</button>`;
+  const _obtNote = _obtDone
+    ? '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">You have already completed this lesson. You can re-read and retake the quiz anytime.</p>'
+    : '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">Read the lesson carefully, then take the quiz to mark it complete.</p>';
+
+  if (_obtContent) {
+    document.getElementById('lessonBody').innerHTML = `
+      <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.8rem 1.2rem;font-size:1rem;line-height:1.85;">
+        ${_obtContent}
+      </div>
+      <div style="text-align:center;margin:2rem 0 1.5rem;padding:0 1rem;">
+        ${_obtNote}<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">${_obtQuizBtn}</div>
+      </div>`;
+  } else {
+    const material = await generateLessonContent(_obtName, unit.name, subj.name, unit.topics||[]);
+    currentLesson.lessonContent = material;
+    document.getElementById('lessonBody').innerHTML = `
+      <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.8rem 1.2rem;font-size:1rem;line-height:1.85;">
+        ${material}
+      </div>
+      <div style="text-align:center;margin:2rem 0 1.5rem;padding:0 1rem;">
+        ${_obtNote}<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">${_obtQuizBtn}</div>
+      </div>`;
+  }
 }
 async function openLesson(si, ui, li){
   const info = currentUserInfo; if(!info) return;
@@ -5861,41 +5889,59 @@ async function openLesson(si, ui, li){
   const unit = typeof u0ol==='string' ? {name:u0ol,topics:[],lessons:[u0ol],topicLessons:{}} : u0ol;
   const lesson = (unit.lessons||[])[li]; if(!lesson) return;
 
-  currentLesson = {si, ui, li, subjectId:subj.id, subjectName:subj.name, unitName:unit.name||('Unit '+(ui+1)), lessonName:lesson, topics:unit.topics||[]};
+  const isRich = lesson && typeof lesson === 'object' && lesson.content;
+  const lessonName = isRich ? lesson.title : (typeof lesson === 'string' ? lesson : String(lesson));
 
-  document.getElementById('lessonMeta').textContent = subj.name + ' · ' + unit.name;
+  currentLesson = {
+    si, ui, li,
+    subjectId: subj.id, subjectName: subj.name,
+    unitName: unit.name||('Unit '+(ui+1)),
+    lessonName,
+    lessonContent: isRich ? lesson.content : null,
+    topics: unit.topics||[]
+  };
+
+  document.getElementById('lessonTitle').textContent = lessonName;
+  document.getElementById('lessonMeta').textContent = subj.name + ' · ' + (unit.name||'');
+  document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div><div>Loading lesson\u2026</div></div>';
   document.getElementById('lessonOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
   document.getElementById('lessonBody').style.userSelect = 'none';
 
-  // Check if lesson has rich content written by faculty
-  const isRich = lesson && typeof lesson === 'object' && lesson.content;
-  const lessonName = isRich ? lesson.title : (typeof lesson === 'string' ? lesson : String(lesson));
-  document.getElementById('lessonTitle').textContent = lessonName;
+  const lk = progKey(subj.id, ui, li);
+  const alreadyDone = !!(progressCache[eKey(info.email)]?.[lk]?.done);
+
+  const quizBtn = alreadyDone
+    ? `<button onclick="closeLessonAndStartQuiz()" style="background:var(--sky);color:#fff;border:none;border-radius:8px;padding:0.75rem 2rem;font-size:0.9rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">🔁 Retake Quiz</button>
+       <button onclick="closeLessonOverlay()" style="background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.75rem 1.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;margin:0 0.4rem;">✅ Close</button>`
+    : `<button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.75rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">🎯 Take Lesson Quiz</button>`;
+
+  const bottomNote = alreadyDone
+    ? '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">You have already completed this lesson. You can re-read and retake the quiz anytime.</p>'
+    : '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">Read the lesson carefully, then take the quiz to mark it complete.</p>';
 
   if (isRich) {
-    const lk = progKey(subj.id, ui, li);
-    const alreadyDone = !!(progressCache[eKey(info.email)]?.[lk]?.done);
+    // Show faculty-written content immediately — no AI needed for display
     document.getElementById('lessonBody').innerHTML = `
-      <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.5rem 1rem;font-size:1rem;line-height:1.8;">
+      <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.8rem 1.2rem;font-size:1rem;line-height:1.85;">
         ${lesson.content}
       </div>
-      <div style="text-align:center;margin:1.5rem 0;">
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">${alreadyDone?'You have already completed this lesson. Re-read anytime! Want to retake the quiz?':'You have read the lesson. Ready to test your knowledge?'}</p>
-        <button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.8rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">${alreadyDone?'🔁 Retake Quiz':'🎯 Take Lesson Quiz'}</button>
-        ${alreadyDone?'<button onclick="closeLessonOverlay()" style="margin-left:0.8rem;background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.8rem 1.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">✅ Back to Syllabus</button>':''}
+      <div style="text-align:center;margin:2rem 0 1.5rem;padding:0 1rem;">
+        ${bottomNote}
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">${quizBtn}</div>
       </div>`;
   } else {
-    document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div>Generating study material using AI…</div>';
-    const material = await generateLessonContent(lessonName, unit.name, subj.name, unit.topics||[]);
-    const lk2 = progKey(subj.id, ui, li);
-    const alreadyDone2 = !!(progressCache[eKey(info.email)]?.[lk2]?.done);
+    // No faculty content — generate with AI, show spinner while loading
+    document.getElementById('lessonBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div><div>Loading lesson\u2026</div></div>';
+    const material = await generateLessonContent(lessonName, unit.name||'', subj.name, unit.topics||[]);
+    currentLesson.lessonContent = material; // store generated content for quiz use
     document.getElementById('lessonBody').innerHTML = `
-      <div class="lesson-content-box">${material}</div>
-      <div style="text-align:center;margin:1.5rem 0;">
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">${alreadyDone2?'You have already completed this lesson. Want to retake the quiz?':'You have read the lesson. Ready to test your knowledge?'}</p>
-        <button onclick="closeLessonAndStartQuiz()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:0.8rem 2.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">${alreadyDone2?'🔁 Retake Quiz':'🎯 Take Lesson Quiz'}</button>
-        ${alreadyDone2?'<button onclick="closeLessonOverlay()" style="margin-left:0.8rem;background:#e8edf2;color:var(--navy);border:none;border-radius:8px;padding:0.8rem 1.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;">✅ Back to Syllabus</button>':''}
+      <div class="lesson-content-box" style="max-width:820px;margin:0 auto;padding:1.8rem 1.2rem;font-size:1rem;line-height:1.85;">
+        ${material}
+      </div>
+      <div style="text-align:center;margin:2rem 0 1.5rem;padding:0 1rem;">
+        ${bottomNote}
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">${quizBtn}</div>
       </div>`;
   }
 }
@@ -5949,13 +5995,24 @@ Keep it concise (about 300-400 words). Do not use markdown, only HTML tags liste
 // ═══════════════════════════════════════════════════════════════════
 // GENERATE QUIZ QUESTIONS via Claude API
 // ═══════════════════════════════════════════════════════════════════
-async function generateQuizQuestions(lessonName, unitName, subjectName, topics, quizType){
+async function generateQuizQuestions(lessonName, unitName, subjectName, topics, quizType, lessonContent){
   const isUnit = quizType === 'unit';
+
+  // Strip HTML tags from lesson content to get plain text
+  let contentContext = '';
+  if (lessonContent && !isUnit) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = lessonContent;
+    const plain = (tmp.textContent || tmp.innerText || '').replace(/\s+/g,' ').trim();
+    contentContext = plain.length > 3000 ? plain.slice(0,3000) + '…' : plain;
+  }
+
   const prompt = `You are a Biotechnology professor at an Indian college. Create a ${isUnit?'unit test':'lesson quiz'} for undergraduate students.
 
 Subject: ${subjectName}
 Unit: ${unitName}
-${isUnit?'Topics covered: '+topics.join(', '):'Lesson: '+lessonName}
+${isUnit ? 'Topics covered: '+topics.join(', ') : 'Lesson: '+lessonName}
+${contentContext ? '\nLesson content to base questions on:\n"""\n'+contentContext+'\n"""' : ''}
 
 Generate EXACTLY this structure as JSON (no markdown, just raw JSON):
 {
@@ -5970,7 +6027,7 @@ Generate EXACTLY this structure as JSON (no markdown, just raw JSON):
   ]
 }
 
-${isUnit?'Make questions comprehensive covering all topics.':'Focus specifically on '+lessonName+'.'}
+${contentContext ? 'IMPORTANT: All MCQ questions and answers MUST come directly from the lesson content provided above.' : (isUnit?'Make questions comprehensive covering all topics.':'Focus specifically on '+lessonName+'.')}
 Rules: MCQ options must start with A./B./C./D., correct is 0-3 index. Return ONLY the JSON object, nothing else.`;
 
   try{
@@ -6006,14 +6063,13 @@ Rules: MCQ options must start with A./B./C./D., correct is 0-3 index. Return ONL
 // ═══════════════════════════════════════════════════════════════════
 async function startLessonQuiz(si, ui, li){
   const info = currentUserInfo; if(!info) return;
-  const subjs = sylData[info.yearOfStudy]||[];
-  const subj = subjs[si]; if(!subj) return;
-  const unit = (subj.units||[])[ui]; if(!unit) return;
-  const lesson = (unit.lessons||[])[li]; if(!lesson) return;
-  currentLesson = {si,ui,li,subjectId:subj.id,subjectName:subj.name,unitName:unit.name,lessonName:lesson,topics:unit.topics||[]};
+  // Use existing currentLesson (already set by openLesson/openLessonByTopic with lessonContent)
+  const cl = currentLesson;
+  if(!cl || cl.si!==si || cl.ui!==ui) return;
   currentQuizType = 'lesson';
-  openQuizOverlay(subj.name+' — '+lesson, unit.name, 'lesson');
-  await runQuiz(lesson, unit.name, subj.name, unit.topics||[], 'lesson');
+  const title = cl.subjectName + ' — ' + cl.lessonName;
+  openQuizOverlay(title, cl.unitName, 'lesson');
+  runQuiz(cl.lessonName, cl.unitName, cl.subjectName, cl.topics||[], 'lesson', cl.lessonContent||null);
 }
 
 async function startUnitTest(si, ui){
@@ -6031,7 +6087,7 @@ function openQuizOverlay(title, meta, type){
   quizViolations = 0;
   document.getElementById('quizTitle').textContent = title;
   document.getElementById('quizMeta').textContent = meta + (type==='unit'?' · Unit Test':' · Lesson Quiz');
-  document.getElementById('quizBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div>Generating questions\u2026</div>';
+  document.getElementById('quizBody').innerHTML = '<div class="ai-loading"><div class="spinner"></div><div>Preparing quiz questions…</div></div>';
   document.getElementById('quizViolations').style.display = 'none';
   document.getElementById('quizTimerDisplay').textContent = '';
   document.getElementById('quizOverlay').classList.add('active');
@@ -6065,8 +6121,8 @@ function showMalpracticeWarn(msg){
   setTimeout(()=>{ if(w.parentNode) w.remove(); }, 4000);
 }
 
-async function runQuiz(lessonName, unitName, subjectName, topics, quizType){
-  const questions = await generateQuizQuestions(lessonName, unitName, subjectName, topics, quizType);
+async function runQuiz(lessonName, unitName, subjectName, topics, quizType, lessonContent){
+  const questions = await generateQuizQuestions(lessonName, unitName, subjectName, topics, quizType, lessonContent);
   if(!questions){
     document.getElementById('quizBody').innerHTML = '<div style="text-align:center;padding:2rem;"><p style="color:#e53e3e;">Failed to generate questions. Please check your connection and try again.</p><button onclick="closeQuizOverlay()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:var(--navy);color:#fff;border:none;border-radius:6px;cursor:pointer;">Close</button></div>';
     return;
