@@ -22,7 +22,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#fff;color:var(--text);ov
 /* ══ REDESIGNED HEADER & NAV ══ */
 
 /* topbar */
-.topbar{background:var(--navy);padding:0.32rem 2.5rem;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.73rem;}
+.topbar{background:var(--navy);padding:0.32rem 2.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.73rem;width:100%;box-sizing:border-box;}
 .tb-left{display:flex;align-items:center;gap:1.2rem;}
 .tb-left a{color:#c8daf0;text-decoration:none;display:flex;align-items:center;gap:0.3rem;transition:color 0.2s;}
 .tb-left a:hover{color:#fff;}
@@ -31,7 +31,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#fff;color:var(--text);ov
 .tb-right a:hover{background:rgba(255,255,255,0.15);color:#fff;}
 
 /* college header */
-.college-header{background:#fff;border-bottom:3px solid var(--gold);padding:0.9rem 2rem;display:flex;align-items:center;gap:1.4rem;box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+.college-header{background:#fff;border-bottom:3px solid var(--gold);padding:0.9rem 2.5rem;display:flex;align-items:center;gap:1.4rem;box-shadow:0 2px 10px rgba(0,0,0,0.06);width:100%;box-sizing:border-box;}
 .ch-logo-wrap{flex-shrink:0;}
 .ch-logo{height:66px;width:auto;}
 .ch-logo-fallback{width:66px;height:66px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.2rem;}
@@ -68,7 +68,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#fff;color:var(--text);ov
 }
 
 /* ── DEPT HERO STRIP ── */
-.dept-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a3a6b 60%,#1a5a9b 100%);border-bottom:3px solid var(--gold);position:relative;overflow:hidden;}
+.dept-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a3a6b 60%,#1a5a9b 100%);border-bottom:3px solid var(--gold);position:relative;overflow:hidden;;width:100%;box-sizing:border-box;}
 .dept-hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3Ccircle cx='0' cy='0' r='4'/%3E%3Ccircle cx='60' cy='60' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;}
 .dept-hero-inner{max-width:1280px;margin:0 auto;padding:1.1rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;}
 .dept-hero-login{display:flex;align-items:center;margin-left:auto;}
@@ -87,8 +87,9 @@ button.dht:hover{background:rgba(255,255,255,0.2);color:#fff;}
 button.dht.active{background:var(--gold);border-color:var(--gold);color:#fff;box-shadow:0 2px 8px rgba(201,136,42,0.4);}
 
 /* ── FULL-WIDTH PAGE LAYOUT ── */
-.page-layout{display:block;max-width:1280px;margin:0 auto;padding:1.5rem 2.5rem;}
+
 .sidebar{display:none!important;}
+.page-layout{display:block;width:100%;max-width:1280px;margin:0 auto;padding:1.5rem 2.5rem;box-sizing:border-box;}
 .content-panel{width:100%;}
 
 @media(max-width:768px){
@@ -102,7 +103,7 @@ button.dht.active{background:var(--gold);border-color:var(--gold);color:#fff;box
 
 /* ── PAGE LAYOUT ── *//* ── PAGE LAYOUT ── */
 .page-wrap{max-width:1280px;margin:0 auto;padding:0 1.2rem;}
-.page-layout{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;padding:1.5rem 1.2rem;max-width:1280px;margin:0 auto;}
+
 
 /* ── BREADCRUMB ── */
 .breadcrumb{background:var(--off2);border-bottom:1px solid var(--border);padding:0.55rem 1.5rem;}
@@ -111,13 +112,13 @@ button.dht.active{background:var(--gold);border-color:var(--gold);color:#fff;box
 .breadcrumb-inner a:hover{text-decoration:underline;}
 
 /* ── SIDEBAR ── */
-.sidebar{flex-shrink:0;}
-.sidebar-box{background:#fff;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:1rem;}
-.sidebar-head{background:var(--navy);color:#fff;padding:0.75rem 1rem;font-family:'Merriweather',serif;font-size:0.88rem;font-weight:700;border-bottom:2px solid var(--gold);}
-.sidebar-menu{list-style:none;}
-.sidebar-menu li a{display:block;padding:0.6rem 1rem;font-size:0.8rem;color:var(--text);text-decoration:none;border-bottom:1px solid var(--off2);font-weight:500;transition:all 0.2s;cursor:pointer;}
-.sidebar-menu li a:hover,.sidebar-menu li a.active{background:var(--sky);color:#fff;padding-left:1.3rem;}
-.sidebar-menu li:last-child a{border-bottom:none;}
+.sidebar{display:none!important;}
+
+
+
+
+
+
 
 
 /* ── EXPANDED FULL-PAGE SECTIONS ── */
@@ -324,8 +325,8 @@ footer{background:var(--navy);margin-top:2rem;}
 
 /* ── RESPONSIVE ── */
 @media(max-width:900px){
-  .page-layout{grid-template-columns:1fr;}
-  .sidebar{display:none;}
+  
+  .sidebar{display:none!important;}
   .sidebar.mob-open{display:block;}
   .ch-right{display:none;}
   .vm-grid{grid-template-columns:1fr;}
@@ -1390,38 +1391,7 @@ img{max-width:100%;}
 <!-- ══ PAGE LAYOUT ══ -->
 <div class="page-layout">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-box">
-      <div class="sidebar-head">Bio-Technology</div>
-      <ul class="sidebar-menu" id="sideMenu">
-        <li><a onclick="showSection('home')" class="active" id="menu-home">Our Department</a></li>
-        <li><a onclick="showSection('course')" id="menu-course">About the Course</a></li>
-        <li><a onclick="showSection('teaching')" id="menu-teaching">Teaching Style</a></li>
-        <li><a onclick="showSection('faculty')" id="menu-faculty">Faculty Profile</a></li>
-        <li><a onclick="showSection('lab')" id="menu-lab">Lab Facilities</a></li>
-        <li><a onclick="showSection('assoc')" id="menu-assoc">Department Association</a></li>
-        <li><a onclick="showSection('rankers')" id="menu-rankers">University Rank Holders</a></li>
-        <li><a onclick="showSection('recruiters')" id="menu-recruiters">Our Recruiters</a></li>
-        <li><a onclick="showSection('publications')" id="menu-publications">Paper Publication in Journal</a></li>
-      </ul>
-    </div>
-    <div class="sidebar-box">
-      <div class="sidebar-head">Our Departments</div>
-      <ul class="sidebar-menu">
-        <li><a href="https://www.nandhaarts.org/bio-technology/" target="_blank">Bio-Technology</a></li>
-        <li><a href="https://www.nandhaarts.org/computer-science/" target="_blank">Computer Science</a></li>
-        <li><a href="https://www.nandhaarts.org/mathematics/" target="_blank">Mathematics</a></li>
-        <li><a href="https://www.nandhaarts.org/chemistry/" target="_blank">Chemistry</a></li>
-        <li><a href="https://www.nandhaarts.org/commerce/" target="_blank">Commerce</a></li>
-        <li><a href="https://www.nandhaarts.org/bca/" target="_blank">BCA</a></li>
-      </ul>
-    </div>
-    <div style="padding:0.75rem;background:#fff;border:1px solid var(--border);border-radius:6px;text-align:center;">
-      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;">Follow Us On</div>
-      <a href="https://www.instagram.com/nandha_biohive/" target="_blank" style="display:inline-flex;align-items:center;gap:0.4rem;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff;padding:0.4rem 0.9rem;border-radius:4px;font-size:0.74rem;font-weight:700;text-decoration:none;">📸 @nandha_biohive</a>
-    </div>
-  </aside>
+
 
   <!-- CONTENT AREA -->
   <main class="content-panel">
@@ -3947,6 +3917,7 @@ async function openFacPortal(info,user){
   document.getElementById('facPortalOverlay').classList.add('active');
   document.body.style.overflow='hidden';
   window.scrollTo(0,0);
+  loadStaffRoles(); // reload roles fresh (non-blocking)
   currentIsDev = !!(user && user.isDev);
   window._currentUserIsDev = currentIsDev;
   // Reload staffRoles fresh from Firebase each portal open
@@ -5232,7 +5203,6 @@ function isHOD(){
   return hodStaff.name.toLowerCase().replace(/[^a-z]/g,'').includes(namePart.replace(/[^a-z]/g,''));
 }
 
-await loadStaffRoles(); // reload roles fresh every time fac portal opens
 
 window.renderStaffMgmt=renderStaffMgmt;
 window.assignHOD=assignHOD;
