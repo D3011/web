@@ -3962,8 +3962,6 @@ async function openFacPortal(info,user){
   selectMarksYear(1,document.querySelector('#ap-marks .year-btn'));
   selectAttYear(1,document.querySelector('#ap-attendance .year-btn'));
   renderUserList();
-  document.getElementById('facPortalOverlay').classList.add('active');
-  document.body.style.overflow='hidden'; window.scrollTo(0,0);
   // Notify dev of Firebase status
   setTimeout(()=>{
     if(!FB_ONLINE) adminToast('⚠️ Firebase unreachable — saves will retry when reconnected. Check rules.');
@@ -3975,9 +3973,11 @@ function showAdminTab(id,btn){
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('ap-'+id).classList.add('active'); btn.classList.add('active');
-  if(id==='progress') renderProgressAdmin();
-  if(id==='staffmgmt') renderStaffMgmt();
-  if(id==='calendar') renderFacCalendar();
+  if(id==='marks')      renderMarksAdmin();
+  if(id==='attendance') renderAttAdmin();
+  if(id==='progress')   renderProgressAdmin();
+  if(id==='staffmgmt')  renderStaffMgmt();
+  if(id==='calendar')   renderFacCalendar();
 }
 
 // ── Flash News ──
@@ -4378,8 +4378,10 @@ async function renderMarksAdmin(){
   el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--muted);font-size:0.82rem;">Loading marks data…</div>';
   await Promise.all(students.map(async u=>{
     const ek=eKey(u.email);
-    const d=await fbGet('/marks/'+ek);
-    marksCache[ek]=d||{};
+    if(!marksCache[ek] || Object.keys(marksCache[ek]).length===0){
+      const d=await fbGet('/marks/'+ek);
+      marksCache[ek]=d||{};
+    }
   }));
   const useSubjs = mySubjs.length ? mySubjs : allSubjs;
   el.innerHTML= filterNote + students.map(u=>{
@@ -4488,8 +4490,10 @@ async function renderAttAdmin(){
   }
   await Promise.all(students.map(async u=>{
     const ek=eKey(u.email);
-    const d=await fbGet('/attendance/'+ek);
-    attendanceCache[ek]=d||{};
+    if(!attendanceCache[ek] || Object.keys(attendanceCache[ek]).length===0){
+      const d=await fbGet('/attendance/'+ek);
+      attendanceCache[ek]=d||{};
+    }
   }));
   const marked=students.filter(u=>(attendanceCache[eKey(u.email)]||{})[pk]==='P').length;
   el.innerHTML=
@@ -4717,6 +4721,51 @@ window.hpAddWhy=hpAddWhy; window.hpDelWhy=hpDelWhy;
 window.hpAddPub=hpAddPub; window.hpDelPub=hpDelPub;
 window.hpAddRanker=hpAddRanker; window.hpDelRanker=hpDelRanker;
 window.hpAddTesti=hpAddTesti; window.hpDelTesti=hpDelTesti;
+if(typeof toggleAtt!=='undefined') window.toggleAtt=toggleAtt;
+if(typeof markAllAtt!=='undefined') window.markAllAtt=markAllAtt;
+if(typeof selectAttYear!=='undefined') window.selectAttYear=selectAttYear;
+if(typeof selectAttPeriod!=='undefined') window.selectAttPeriod=selectAttPeriod;
+if(typeof setAttToday!=='undefined') window.setAttToday=setAttToday;
+if(typeof saveStudentMarks!=='undefined') window.saveStudentMarks=saveStudentMarks;
+if(typeof selectMarksYear!=='undefined') window.selectMarksYear=selectMarksYear;
+if(typeof renderMarksAdminAll!=='undefined') window.renderMarksAdminAll=renderMarksAdminAll;
+if(typeof renderStudentMarks!=='undefined') window.renderStudentMarks=renderStudentMarks;
+if(typeof saveTimetable!=='undefined') window.saveTimetable=saveTimetable;
+if(typeof selectTTYear!=='undefined') window.selectTTYear=selectTTYear;
+if(typeof selectFacYear!=='undefined') window.selectFacYear=selectFacYear;
+if(typeof addNewUser!=='undefined') window.addNewUser=addNewUser;
+if(typeof deleteUser!=='undefined') window.deleteUser=deleteUser;
+if(typeof addCustomStaff!=='undefined') window.addCustomStaff=addCustomStaff;
+if(typeof addFac!=='undefined') window.addFac=addFac;
+if(typeof editFac!=='undefined') window.editFac=editFac;
+if(typeof deleteFac!=='undefined') window.deleteFac=deleteFac;
+if(typeof assignHOD!=='undefined') window.assignHOD=assignHOD;
+if(typeof checkFirebaseWriteAccess!=='undefined') window.checkFirebaseWriteAccess=checkFirebaseWriteAccess;
+if(typeof testFirebaseConnection!=='undefined') window.testFirebaseConnection=testFirebaseConnection;
+if(typeof autoMarkHolidaysForMonth!=='undefined') window.autoMarkHolidaysForMonth=autoMarkHolidaysForMonth;
+if(typeof selectProgYear!=='undefined') window.selectProgYear=selectProgYear;
+if(typeof toggleProgDetail!=='undefined') window.toggleProgDetail=toggleProgDetail;
+if(typeof viewAnswers!=='undefined') window.viewAnswers=viewAnswers;
+if(typeof openLesson!=='undefined') window.openLesson=openLesson;
+if(typeof openLessonByTopic!=='undefined') window.openLessonByTopic=openLessonByTopic;
+if(typeof closeLessonOverlay!=='undefined') window.closeLessonOverlay=closeLessonOverlay;
+if(typeof closeLessonAndStartQuiz!=='undefined') window.closeLessonAndStartQuiz=closeLessonAndStartQuiz;
+if(typeof closeQuizOverlay!=='undefined') window.closeQuizOverlay=closeQuizOverlay;
+if(typeof selectMcq!=='undefined') window.selectMcq=selectMcq;
+if(typeof submitQuiz!=='undefined') window.submitQuiz=submitQuiz;
+if(typeof retakeQuiz!=='undefined') window.retakeQuiz=retakeQuiz;
+if(typeof startUnitTest!=='undefined') window.startUnitTest=startUnitTest;
+if(typeof addTopicLesson!=='undefined') window.addTopicLesson=addTopicLesson;
+if(typeof editTopicLesson!=='undefined') window.editTopicLesson=editTopicLesson;
+if(typeof deleteTopicLesson!=='undefined') window.deleteTopicLesson=deleteTopicLesson;
+if(typeof switchToDevPortal!=='undefined') window.switchToDevPortal=switchToDevPortal;
+if(typeof switchToStudentPortal!=='undefined') window.switchToStudentPortal=switchToStudentPortal;
+if(typeof showSection!=='undefined') window.showSection=showSection;
+if(typeof showRank!=='undefined') window.showRank=showRank;
+if(typeof stdAttNavMonth!=='undefined') window.stdAttNavMonth=stdAttNavMonth;
+if(typeof addUnitToSubject!=='undefined') window.addUnitToSubject=addUnitToSubject;
+if(typeof editUnitName!=='undefined') window.editUnitName=editUnitName;
+
 
 // ═══════════════════════════════════════════════════════════════════
 // ACADEMIC CALENDAR DATA (from official NASC PDF 2025-2026 Even Sem)
