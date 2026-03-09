@@ -22,7 +22,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#fff;color:var(--text);ov
 /* ══ REDESIGNED HEADER & NAV ══ */
 
 /* topbar */
-.topbar{background:var(--navy);padding:0.32rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.73rem;}
+.topbar{background:var(--navy);padding:0.32rem 2.5rem;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;font-size:0.73rem;}
 .tb-left{display:flex;align-items:center;gap:1.2rem;}
 .tb-left a{color:#c8daf0;text-decoration:none;display:flex;align-items:center;gap:0.3rem;transition:color 0.2s;}
 .tb-left a:hover{color:#fff;}
@@ -70,7 +70,7 @@ body{font-family:'Source Sans 3',sans-serif;background:#fff;color:var(--text);ov
 /* ── DEPT HERO STRIP ── */
 .dept-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a3a6b 60%,#1a5a9b 100%);border-bottom:3px solid var(--gold);position:relative;overflow:hidden;}
 .dept-hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3Ccircle cx='0' cy='0' r='4'/%3E%3Ccircle cx='60' cy='60' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;}
-.dept-hero-inner{max-width:1400px;margin:0 auto;padding:1.1rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;}
+.dept-hero-inner{max-width:1280px;margin:0 auto;padding:1.1rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;}
 .dept-hero-login{display:flex;align-items:center;margin-left:auto;}
 .dept-login-btn{display:inline-block;background:var(--gold);color:#fff;font-family:"Source Sans 3",sans-serif;font-weight:700;font-size:0.88rem;padding:0.5rem 1.3rem;border-radius:6px;text-decoration:none;border:2px solid var(--gold2);white-space:nowrap;transition:background 0.2s,transform 0.15s;}
 .dept-login-btn:hover{background:var(--gold2);transform:translateY(-1px);}
@@ -87,7 +87,7 @@ button.dht:hover{background:rgba(255,255,255,0.2);color:#fff;}
 button.dht.active{background:var(--gold);border-color:var(--gold);color:#fff;box-shadow:0 2px 8px rgba(201,136,42,0.4);}
 
 /* ── FULL-WIDTH PAGE LAYOUT ── */
-.page-layout{display:block;max-width:1100px;margin:0 auto;padding:1.5rem 1.5rem;}
+.page-layout{display:block;max-width:1280px;margin:0 auto;padding:1.5rem 2.5rem;}
 .sidebar{display:none!important;}
 .content-panel{width:100%;}
 
@@ -101,12 +101,12 @@ button.dht.active{background:var(--gold);border-color:var(--gold);color:#fff;box
 }
 
 /* ── PAGE LAYOUT ── *//* ── PAGE LAYOUT ── */
-.page-wrap{max-width:1200px;margin:0 auto;padding:0 1.2rem;}
-.page-layout{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;padding:1.5rem 1.2rem;max-width:1200px;margin:0 auto;}
+.page-wrap{max-width:1280px;margin:0 auto;padding:0 1.2rem;}
+.page-layout{display:grid;grid-template-columns:220px 1fr;gap:1.5rem;padding:1.5rem 1.2rem;max-width:1280px;margin:0 auto;}
 
 /* ── BREADCRUMB ── */
 .breadcrumb{background:var(--off2);border-bottom:1px solid var(--border);padding:0.55rem 1.5rem;}
-.breadcrumb-inner{max-width:1200px;margin:0 auto;font-size:0.76rem;color:var(--muted);display:flex;align-items:center;gap:0.4rem;}
+.breadcrumb-inner{max-width:1280px;margin:0 auto;font-size:0.76rem;color:var(--muted);display:flex;align-items:center;gap:0.4rem;}
 .breadcrumb-inner a{color:var(--sky);text-decoration:none;font-weight:600;}
 .breadcrumb-inner a:hover{text-decoration:underline;}
 
@@ -254,7 +254,7 @@ ul.body-ul li:nth-child(even){background:var(--off);}
 
 /* ── FOOTER ── */
 footer{background:var(--navy);margin-top:2rem;}
-.footer-top{padding:2.5rem 1.5rem;max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1.8fr 1fr 1fr;gap:2rem;}
+.footer-top{padding:2.5rem 1.5rem;max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1.8fr 1fr 1fr;gap:2rem;}
 .footer-brand .fb-name{font-family:'Merriweather',serif;font-size:0.95rem;font-weight:700;color:#fff;margin-bottom:0.6rem;}
 .footer-brand p{font-size:0.8rem;color:#a0b8d0;line-height:1.75;max-width:280px;}
 .footer-brand .social-row{display:flex;gap:0.5rem;margin-top:0.8rem;}
@@ -264,7 +264,7 @@ footer{background:var(--navy);margin-top:2rem;}
 .footer-col a,.footer-col p{display:block;font-size:0.79rem;color:#a0b8d0;text-decoration:none;margin-bottom:0.4rem;line-height:1.6;}
 .footer-col a:hover{color:#fff;}
 .footer-bottom{background:rgba(0,0,0,0.25);padding:0.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}
-.footer-bottom-inner{max-width:1200px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}
+.footer-bottom-inner{max-width:1280px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}
 .copy{font-size:0.73rem;color:#7a98b8;}
 .dev{font-size:0.73rem;color:#7a98b8;}
 .dev strong{color:var(--gold2);}
@@ -446,7 +446,7 @@ header{
   background-image:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(255,255,255,0.5) 40px,rgba(255,255,255,0.5) 41px),
                    repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,0.5) 40px,rgba(255,255,255,0.5) 41px);
 }
-.hero-inner{position:relative;z-index:2;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.1fr 0.9fr;gap:4rem;align-items:center;}
+.hero-inner{position:relative;z-index:2;max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1.1fr 0.9fr;gap:4rem;align-items:center;}
 .hero-breadcrumb{font-size:0.75rem;color:rgba(255,255,255,0.55);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:1rem;}
 .hero-breadcrumb span{color:var(--gold-lt);}
 .hero-h1{
@@ -493,7 +493,7 @@ header{
   background:var(--off2);border-bottom:1px solid var(--border);
   padding:0.6rem 2.5rem;
 }
-.page-bar-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--light);}
+.page-bar-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--light);}
 .page-bar-inner a{color:var(--sky);text-decoration:none;}
 .page-bar-inner a:hover{text-decoration:underline;}
 .page-bar-inner span{color:var(--muted);}
@@ -501,7 +501,7 @@ header{
 /* ══ COMMON SECTION ══ */
 section{position:relative;}
 .section-pad{padding:4.5rem 2.5rem;}
-.container{max-width:1100px;margin:0 auto;}
+.container{max-width:1280px;margin:0 auto;}
 .section-header{margin-bottom:2.5rem;}
 .sec-tag{
   display:inline-flex;align-items:center;gap:0.45rem;
@@ -546,7 +546,7 @@ section{position:relative;}
 
 /* ══ QUICK LINKS BAR ══ */
 .quicklinks{background:var(--navy);padding:1.5rem 2.5rem;}
-.quicklinks-inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:center;}
+.quicklinks-inner{max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:center;}
 .ql-item{
   background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
   color:rgba(255,255,255,0.85);text-decoration:none;
@@ -616,7 +616,7 @@ section{position:relative;}
   background:var(--off2);border-top:3px solid var(--gold);border-bottom:1px solid var(--border);
   padding:1.5rem 2.5rem;
 }
-.accred-strip-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;flex-wrap:wrap;gap:2rem;}
+.accred-strip-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;flex-wrap:wrap;gap:2rem;}
 .accred-strip-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);white-space:nowrap;}
 .accred-badges{display:flex;flex-wrap:wrap;gap:0.6rem;}
 .accred-badge{
@@ -759,7 +759,7 @@ section{position:relative;}
 
 /* ══ FOOTER ══ */
 footer{background:var(--navy);}
-.footer-main{padding:3rem 2.5rem 2rem;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:2.5rem;}
+.footer-main{padding:3rem 2.5rem 2rem;max-width:1280px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:2.5rem;}
 .footer-brand{}
 .footer-logo{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.9rem;}
 .footer-logo img{height:44px;width:auto;filter:brightness(0) invert(1);opacity:0.85;}
@@ -776,7 +776,7 @@ footer{background:var(--navy);}
   background:rgba(0,0,0,0.25);padding:1rem 2.5rem;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
 }
-.footer-bottom-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.footer-bottom-inner{max-width:1280px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
 .footer-copy{font-size:0.74rem;color:rgba(255,255,255,0.35);}
 .footer-badges{display:flex;gap:0.5rem;flex-wrap:wrap;}
 .f-badge{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);padding:0.2rem 0.6rem;border-radius:3px;font-size:0.67rem;font-weight:700;}
@@ -997,7 +997,7 @@ footer{background:var(--navy);}
 .fac-portal-topbar-brand{display:flex;align-items:center;gap:0.75rem;}
 .fac-portal-topbar-name{font-family:'Merriweather',serif;font-size:0.82rem;color:#fff;font-weight:700;}
 .fac-dev-badge{background:var(--gold);color:#fff;font-size:0.65rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:3px;margin-left:0.5rem;letter-spacing:0.05em;}
-.fac-portal-body{max-width:1100px;margin:0 auto;padding:1.8rem 1.5rem 3rem;}
+.fac-portal-body{max-width:1280px;margin:0 auto;padding:1.8rem 1.5rem 3rem;}
 
 /* Admin tabs */
 .admin-tabs{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.5rem;background:#fff;border:1px solid var(--border);border-radius:7px;padding:0.5rem;}
@@ -1303,7 +1303,7 @@ img{max-width:100%;}
 
 /* Desktop — wider content */
 @media(min-width:1024px){
-  .fac-portal-body{max-width:1100px;margin:0 auto;}
+  .fac-portal-body{max-width:1280px;margin:0 auto;}
   .portal-section{max-width:900px;margin-left:auto;margin-right:auto;}
   .quiz-body{max-width:820px;}
   .admin-card{max-width:100%;}
@@ -1351,16 +1351,10 @@ img{max-width:100%;}
       <span class="ch-badge">AICTE</span>
       <span class="ch-badge">AUTONOMOUS</span>
       <span class="ch-badge">UGC 2(f) &amp; 12(B)</span>
-      <span class="ch-badge ese-link" onclick="alert('ESE Results Nov/Dec 2025 — Please check the official portal.')" style="cursor:pointer;background:rgba(201,136,42,0.18);border-color:var(--gold);color:var(--gold);">📢 ESE Results Nov/Dec 2025</span>
     </div>
   </div>
   <div class="ch-right">
     <a href="tel:+917373724422" class="ch-admission">📞 Admissions 2026–27</a>
-    <div class="ch-links">
-      <a href="#" class="ch-link-btn" onclick="openLogin(event)">Student Login</a>
-      <a href="#" class="ch-link-btn" onclick="openLogin(event)">Staff Login</a>
-    </div>
-    <a href="/cdn-cgi/l/email-protection#d5bcbbb3ba95bbb4bbb1bdb4b4a7a1a6fbbaa7b2" class="ch-link-btn" style="background:var(--gold);text-align:center;">Auditorium Booking</a>
   </div>
 </div>
 
@@ -2429,6 +2423,7 @@ img{max-width:100%;}
     </div>
     <div class="portal-topbar-right">
       <span class="portal-welcome" id="portalWelcome">Welcome, Student</span>
+      <button onclick="refreshStudentData()" title="Refresh marks & attendance" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:0.25rem 0.7rem;cursor:pointer;font-size:0.8rem;margin-left:0.5rem;">↺ Refresh</button>
       <button class="dev-switch-btn" id="devSwitchBtn" onclick="switchToDevPortal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         Dev Portal
@@ -2613,8 +2608,9 @@ img{max-width:100%;}
 
     <!-- Internal Marks -->
     <div class="portal-section" id="stdMarksSection">
-      <div class="portal-sec-header">
+      <div class="portal-sec-header" style="display:flex;justify-content:space-between;align-items:center;">
         <span class="portal-sec-title">📊 Internal Marks</span>
+        <button onclick="renderStudentMarks(currentUserInfo)" style="font-size:0.72rem;background:var(--sky);color:#fff;border:none;padding:0.28rem 0.85rem;border-radius:4px;cursor:pointer;font-weight:700;font-family:inherit;">↺ Refresh</button>
       </div>
       <div class="portal-sec-body" id="stdMarksBody">
         <!-- rendered by JS -->
@@ -2623,9 +2619,12 @@ img{max-width:100%;}
 
     <!-- Attendance -->
     <div class="portal-section" id="stdAttSection">
-      <div class="portal-sec-header">
+      <div class="portal-sec-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;">
         <span class="portal-sec-title">✅ Attendance</span>
-        <span class="portal-sec-badge" id="stdAttOverallBadge"></span>
+        <span style="display:flex;align-items:center;gap:0.5rem;">
+          <span class="portal-sec-badge" id="stdAttOverallBadge"></span>
+          <button onclick="(async()=>{const ek=eKey(currentUserInfo.email);attendanceCache[ek]={};const d=await fbGet('/attendance/'+ek);if(d&&typeof d==='object')attendanceCache[ek]=d;renderStudentAttendance(currentUserInfo);renderStudentCalendar();})()" style="font-size:0.72rem;background:var(--sky);color:#fff;border:none;padding:0.28rem 0.85rem;border-radius:4px;cursor:pointer;font-weight:700;font-family:inherit;">↺ Refresh</button>
+        </span>
       </div>
       <div class="portal-sec-body" id="stdAttBody">
         <!-- rendered by JS -->
@@ -3368,7 +3367,7 @@ async function testFbConnection(){
       if(r.status===401||r.status===403){ FB_ONLINE=false; showFbBanner('denied'); return; }
       if(r.ok){
         FB_ONLINE=true; showFbBanner('online');
-        await Promise.all([loadExtraUsers(),loadCoreData(),loadSyllabusLessons(),loadHpData()]);
+        await Promise.all([loadExtraUsers(),loadCoreData(),loadSyllabusLessons(),loadHpData(),loadStaffRoles()]);
         applyHpData();
         return;
       }
@@ -3380,11 +3379,12 @@ async function testFbConnection(){
 }
 
 async function fbGet(path){
-  if(!FB_ONLINE && FB_CHECKED) return null;
   try{
-    const r=await fetch(DB+path+'.json');
+    const r=await fetch(DB+path+'.json?ts='+Date.now());
     if(!r.ok) return null;
-    return await r.json();
+    const data=await r.json();
+    if(!FB_ONLINE){FB_ONLINE=true;showFbBanner('online');}
+    return data;
   }catch(e){ return null; }
 }
 
@@ -3393,7 +3393,6 @@ async function fbGet(path){
 
 
 async function fbPush(path,data){
-  if(!FB_ONLINE) return null;
   try{
     const r=await fetch(DB+path+'.json',{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});
     if(!r.ok) return null;
@@ -3591,22 +3590,15 @@ function getSubjectsForYear(yr){ return sylData[yr]||[]; }
 
 // Load users from Firebase
 async function loadExtraUsers(){
-  // Load independently — don't wait for FB_ONLINE flag
-  // Firebase rules for /extraUsers must be ".read":true for this to work
+  // Always fetch — independent of FB_ONLINE flag
   try{
-    const r=await fetch(DB+'/extraUsers.json',{});
+    const r=await fetch(DB+'/extraUsers.json?ts='+Date.now());
     if(r.ok){
       const data=await r.json();
-      if(data===null){
-        extraUsers=[];   // empty node — no users saved yet, that is fine
-      } else if(data&&typeof data==='object'){
-        extraUsers=Object.values(data);
-      }
+      if(data===null){ extraUsers=[]; }
+      else if(data&&typeof data==='object'){ extraUsers=Object.values(data); }
     }
-  }catch(e){
-    // Firebase offline or rules block read — users stay as empty array
-    // Built-in BASE_USERS still work
-  }
+  }catch(e){ /* offline — BASE_USERS still work */ }
 }
 async function saveExtraUserToFB(user){
   // Direct fetch — bypasses FB_ONLINE guard so saves always reach Firebase
@@ -3682,6 +3674,7 @@ async function openPortal(info,user){
   document.getElementById('portalOverlay').classList.add('active');
   document.body.style.overflow='hidden';
   window.scrollTo(0,0);
+  startStudentAutoRefresh();
   window._currentUserIsDev = !!(user && user.isDev);
   document.getElementById('profileName').textContent=info.name;
   document.getElementById('profileAvatar').textContent=info.init;
@@ -3710,7 +3703,7 @@ async function openPortal(info,user){
 
   // Load attendance from Firebase then render
   const ek=eKey(info.email);
-  // Always fetch fresh flat attendance { date: 'P'|'A' }
+  // Always fetch fresh attendance (never use cached)
   attendanceCache[ek]={};
   const attData=await fbGet('/attendance/'+ek);
   if(attData&&typeof attData==='object') attendanceCache[ek]=attData;
@@ -3728,7 +3721,36 @@ async function openPortal(info,user){
 
   // (portal already shown at top of this function)
 }
+let _stdRefreshInterval = null;
+
+function refreshStudentData(silent){
+  if(!currentUserInfo) return;
+  const info = currentUserInfo;
+  const ek = eKey(info.email);
+  if(!silent) adminToast && adminToast('Refreshing…');
+  delete marksCache[ek];
+  attendanceCache[ek] = {};
+  renderStudentMarks(info);
+  fbGet('/attendance/'+ek).then(data=>{
+    if(data && typeof data==='object') attendanceCache[ek] = data;
+    renderStudentAttendance(info);
+    renderStudentCalendar();
+  });
+  renderStudentFlash();
+  renderStudentNotifs();
+  loadSyllabusLessons().then(()=>renderStudentSyllabus(info));
+}
+
+function startStudentAutoRefresh(){
+  stopStudentAutoRefresh();
+  _stdRefreshInterval = setInterval(()=>refreshStudentData(true), 30000); // every 30s
+}
+
+function stopStudentAutoRefresh(){
+  if(_stdRefreshInterval){ clearInterval(_stdRefreshInterval); _stdRefreshInterval=null; }
+}
 function doLogout(){
+  stopStudentAutoRefresh();
   document.getElementById('portalOverlay').classList.remove('active');
   document.body.style.overflow='';
   currentUserObj=null;
@@ -3759,6 +3781,7 @@ async function renderStudentMarks(info){
   const el=document.getElementById('stdMarksBody'); if(!el)return;
   el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.82rem;">Loading marks…</div>';
   const ek=eKey(info.email);
+  delete marksCache[ek]; // always fetch fresh — never use stale cache
   const data=await fbGet('/marks/'+ek);
   const subjs=getSubjectsForYear(info.yearOfStudy);
   const myM=data||{};
@@ -3777,8 +3800,12 @@ async function renderStudentMarks(info){
 }
 
 // ── Student Attendance Calendar ──
-function renderStudentAttendance(info){
+async function renderStudentAttendance(info){
   const el=document.getElementById('stdAttBody'); if(!el)return;
+  // Always fetch fresh attendance from Firebase
+  const ek=eKey(info.email);
+  const fresh=await fbGet('/attendance/'+ek);
+  if(fresh&&typeof fresh==='object') attendanceCache[ek]=fresh;
   el.innerHTML=buildStudentAttCal(info);
   updateStdAttBadge(info);
 }
@@ -3922,6 +3949,8 @@ async function openFacPortal(info,user){
   window.scrollTo(0,0);
   currentIsDev = !!(user && user.isDev);
   window._currentUserIsDev = currentIsDev;
+  // Reload staffRoles fresh from Firebase each portal open
+  loadStaffRoles();
   currentFacEmail = info.email.toLowerCase();
   // Show "← Student View" if this dev also has a student account
   const backBtn=document.getElementById('backToStudentBtn');
@@ -4683,14 +4712,18 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   migrateSylData();               // ensure unit objects have topics/lessons keys
   applyHpData();                  // apply default homepage content immediately
 
-  // ── Test Firebase connection first — loads data internally on success ──
-  testFbConnection();  // non-blocking — runs in background
+  // ── Load extra users immediately (faculty roles, etc.) ──
+  loadExtraUsers();               // always try — independent of connection test
+
+  // ── Test Firebase and load all other data ──
+  testFbConnection();             // non-blocking — loads core data on success
 });
 
 // ── EXPOSE TO WINDOW ──
 window.toggleNav=toggleNav; window.openLogin=openLogin; window.closeLogin=closeLogin;
 window.selectRole=selectRole; window.goBack=goBack; window.doLogin=doLogin;
-window.doLogout=doLogout; window.doFacLogout=doFacLogout;
+window.doLogout=doLogout;
+window.refreshStudentData=refreshStudentData; window.doFacLogout=doFacLogout;
 window.showSyl=showSyl; window.toggleUnit=toggleUnit;
 window.showAdminTab=showAdminTab;
 window.addFlashNews=addFlashNews; window.deleteFlash=deleteFlash;
@@ -5034,16 +5067,42 @@ const DEPARTMENT_STAFF = [
 let staffRoles = { hod: '', classIncharge: {1:'', 2:'', 3:''} };
 
 async function loadStaffRoles(){
+  // Try Firebase first
   const d = await fbGet('/staffRoles');
   if(d && typeof d==='object'){
     staffRoles.hod = d.hod||'';
     staffRoles.classIncharge = d.classIncharge||{1:'',2:'',3:''};
+    try{ sessionStorage.setItem('staffRoles', JSON.stringify(staffRoles)); }catch(e){}
+    return;
   }
+  // Fallback: sessionStorage (survives page reload, lost on tab close)
+  try{
+    const s = sessionStorage.getItem('staffRoles');
+    if(s){ const parsed=JSON.parse(s); staffRoles.hod=parsed.hod||''; staffRoles.classIncharge=parsed.classIncharge||{1:'',2:'',3:''}; }
+  }catch(e){}
 }
 
 async function saveStaffRoles(){
+  if(!FB_ONLINE){ adminToast('⚠️ Firebase offline — roles not saved. Check connection.'); return; }
+  fbSaving(true);
+  // Also persist to sessionStorage as backup
+  try{ sessionStorage.setItem('staffRoles', JSON.stringify(staffRoles)); }catch(e){}
   const ok = await fbSet('/staffRoles', staffRoles);
-  adminToast(ok ? '✅ Staff roles saved!' : '⚠️ Saved locally — Firebase offline');
+  fbSaving(false);
+  if(ok){
+    // Verify write succeeded
+    const verify = await fbGet('/staffRoles');
+    if(verify){
+      staffRoles.hod = verify.hod||'';
+      staffRoles.classIncharge = verify.classIncharge||{1:'',2:'',3:''};
+      adminToast('✅ Staff roles saved & verified!');
+      renderStaffMgmt();
+    } else {
+      adminToast('⚠️ Saved but could not verify — check Firebase rules.');
+    }
+  } else {
+    adminToast('❌ Failed to save — Firebase offline or rules blocked.');
+  }
 }
 
 function getStaffById(id){ return DEPARTMENT_STAFF.find(s=>s.id===id)||null; }
@@ -5173,7 +5232,7 @@ function isHOD(){
   return hodStaff.name.toLowerCase().replace(/[^a-z]/g,'').includes(namePart.replace(/[^a-z]/g,''));
 }
 
-// Staff roles loaded in openFacPortal via loadStaffRoles()
+await loadStaffRoles(); // reload roles fresh every time fac portal opens
 
 window.renderStaffMgmt=renderStaffMgmt;
 window.assignHOD=assignHOD;
